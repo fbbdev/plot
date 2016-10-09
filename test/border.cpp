@@ -1,4 +1,4 @@
-#include "../terminal_canvas.hpp"
+#include "../braille.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -7,7 +7,7 @@
 using namespace plot;
 
 int main() {
-    TerminalCanvas canvas({ 30, 7 }, TerminalColor::Xterm24bit);
+    TerminalCanvas canvas({ 30, 7 }, TerminalColor::Iso24bit);
 
     Rect rect({ 0, 0 }, canvas.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);

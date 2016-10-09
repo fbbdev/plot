@@ -1,4 +1,4 @@
-#include "../terminal_canvas.hpp"
+#include "../braille.hpp"
 
 #include <cmath>
 #include <csignal>
@@ -16,8 +16,8 @@ int main() {
         run = false;
     });
 
-    TerminalCanvas waves({ 30, 7 }, TerminalColor::Xterm24bit);
-    TerminalCanvas circle({ 34, 17 }, TerminalColor::Xterm24bit);
+    TerminalCanvas waves({ 30, 7 }, TerminalColor::Iso24bit);
+    TerminalCanvas circle({ 34, 17 }, TerminalColor::Iso24bit);
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);

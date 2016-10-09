@@ -3,6 +3,7 @@
 #include "color.hpp"
 #include "point.hpp"
 #include "rect.hpp"
+#include "terminal.hpp"
 #include "utils.hpp"
 
 #include <cmath>
@@ -17,21 +18,6 @@
 
 namespace plot
 {
-
-enum class TerminalColor {
-    None,
-    Minimal,
-    Ansi,
-    Xterm256,
-    Xterm24bit
-};
-
-enum class TerminalOp {
-    Over,
-    ClipDst,
-    ClipSrc
-};
-
 
 namespace detail
 {
@@ -769,10 +755,10 @@ void TerminalCanvas::const_iterator::fetch_data() {
                 ansi_color = detail::to_ansi(color);
                 std::sprintf(buffer, "\x1b[%dm", 30 + ansi_color.first);
                 break;
-            case TerminalColor::Xterm256:
+            case TerminalColor::Ansi256:
                 std::sprintf(buffer, "\x1b[38;5;%dm", detail::to_xterm256(color));
                 break;
-            case TerminalColor::Xterm24bit:
+            case TerminalColor::Iso24bit:
                 c32 = color.color32();
                 std::sprintf(buffer, "\x1b[38;2;%d;%d;%dm", c32.r, c32.g, c32.b);
                 break;
@@ -803,7 +789,7 @@ TerminalCanvas::const_iterator operator+(TerminalCanvas::const_iterator::differe
 
 std::ostream& operator<<(std::ostream& stream, TerminalCanvas const& canvas) {
     for (auto const& line: canvas) {
-        stream << "\x1b[K" << line << '\n';
+        stream << line << '\n';
     }
 
     return stream;
