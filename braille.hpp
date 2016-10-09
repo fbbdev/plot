@@ -218,7 +218,7 @@ namespace detail
 } /* namespace detail */
 
 
-class TerminalCanvas {
+class BrailleCanvas {
 public:
     using value_type = std::string const;
     using reference = std::string const&;
@@ -321,9 +321,9 @@ public:
         }
 
     private:
-        friend class TerminalCanvas;
+        friend class BrailleCanvas;
 
-        const_iterator(TerminalCanvas const* canvas, detail::image_t::const_iterator line)
+        const_iterator(BrailleCanvas const* canvas, detail::image_t::const_iterator line)
             : canvas(canvas), line(line)
         {
             fetch_data();
@@ -333,7 +333,7 @@ public:
         template<typename = void>
         void fetch_data();
 
-        TerminalCanvas const* canvas = nullptr;
+        BrailleCanvas const* canvas = nullptr;
         detail::image_t::const_iterator line{};
         std::string data{};
     };
@@ -342,15 +342,15 @@ public:
     using difference_type = std::ptrdiff_t;
     using size_type = std::size_t;
 
-    TerminalCanvas() = default;
+    BrailleCanvas() = default;
 
-    TerminalCanvas(Size term_size, TerminalColor mode = TerminalColor::None)
+    BrailleCanvas(Size term_size, TerminalColor mode = TerminalColor::None)
         : lines(term_size.y), cols(term_size.x), blocks(term_size), mode(mode)
     {
         available_layers.emplace_front(term_size);
     }
 
-    TerminalCanvas(Color background, Size term_size, TerminalColor mode = TerminalColor::None)
+    BrailleCanvas(Color background, Size term_size, TerminalColor mode = TerminalColor::None)
         : lines(term_size.y), cols(term_size.x), blocks(term_size), background(background), mode(mode)
     {
         available_layers.emplace_front(term_size);
@@ -380,7 +380,7 @@ public:
         return { this, blocks.cend() };
     }
 
-    TerminalCanvas& push() {
+    BrailleCanvas& push() {
         if (available_layers.empty())
             available_layers.emplace_front(term_size());
 
@@ -390,7 +390,7 @@ public:
         return *this;
     }
 
-    TerminalCanvas& pop(TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& pop(TerminalOp op = TerminalOp::Over) {
         if (!stack.empty()) {
             stack.front().paint(blocks, op);
             blocks.swap(stack.front());
@@ -399,7 +399,7 @@ public:
         return *this;
     }
 
-    TerminalCanvas& resize(Size size) {
+    BrailleCanvas& resize(Size size) {
         if (size != term_size()) {
             blocks.resize(term_size(), size);
 
@@ -416,17 +416,17 @@ public:
         return *this;
     }
 
-    TerminalCanvas& clear() {
+    BrailleCanvas& clear() {
         blocks.clear();
         return *this;
     }
 
-    TerminalCanvas& clear(Color background) {
+    BrailleCanvas& clear(Color background) {
         this->background = background;
         return clear();
     }
 
-    TerminalCanvas& clear(Rect rect) {
+    BrailleCanvas& clear(Rect rect) {
         rect = rect.sorted();
         Rect block_rect{
             { rect.p1.x/2, rect.p1.y/4 },
@@ -457,19 +457,19 @@ public:
     }
 
     template<typename Fn>
-    TerminalCanvas& stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
+    BrailleCanvas& stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
 
     template<typename Fn>
-    TerminalCanvas& fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
+    BrailleCanvas& fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
 
-    TerminalCanvas& dot(Color const& color, Point p, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& dot(Color const& color, Point p, TerminalOp op = TerminalOp::Over) {
         if (Rect({}, size()).contains(p)) {
             paint(p.y / 4, p.x / 2, detail::block_t(color).set(p.x % 2, p.y % 4), op);
         }
         return *this;
     }
 
-    TerminalCanvas& line(Color const& color, Point from, Point to, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& line(Color const& color, Point from, Point to, TerminalOp op = TerminalOp::Over) {
         auto dx = to.x - from.x,
              dy = to.y - from.y;
 
@@ -484,7 +484,7 @@ public:
     }
 
     template<typename Iterator>
-    TerminalCanvas& path(Color const& color, Iterator first, Iterator last, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& path(Color const& color, Iterator first, Iterator last, TerminalOp op = TerminalOp::Over) {
         push();
         auto start = *first;
         while (++first != last) {
@@ -495,11 +495,11 @@ public:
         return pop(op);
     }
 
-    TerminalCanvas& path(Color const& color, std::initializer_list<Point> const& points, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& path(Color const& color, std::initializer_list<Point> const& points, TerminalOp op = TerminalOp::Over) {
         return path(color, points.begin(), points.end(), op);
     }
 
-    TerminalCanvas& rect(Color const& color, Rect const& rect, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& rect(Color const& color, Rect const& rect, TerminalOp op = TerminalOp::Over) {
         return push()
               .line(color, rect.p1, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
               .line(color, rect.p1, { rect.p1.x, rect.p2.y }, TerminalOp::Over)
@@ -508,7 +508,7 @@ public:
               .pop(op);
     }
 
-    TerminalCanvas& rect(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& rect(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
         rect = rect.sorted();
         return push()
               .line(stroke, rect.p1, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
@@ -521,7 +521,7 @@ public:
               .pop(op);
     }
 
-    TerminalCanvas& ellipse(Color const& color, Rect rect, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& ellipse(Color const& color, Rect rect, TerminalOp op = TerminalOp::Over) {
         rect = rect.sorted();
         auto size = rect.size() + Point(1, 1);
 
@@ -562,7 +562,7 @@ public:
               .pop(op);
     }
 
-    TerminalCanvas& ellipse(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
         rect = rect.sorted();
         auto size = rect.size() + Point(1, 1);
 
@@ -624,7 +624,7 @@ public:
     }
 
 private:
-    friend class TerminalCanvas::const_iterator;
+    friend class BrailleCanvas::const_iterator;
 
     detail::block_t& block(std::size_t line, std::size_t col) {
         return blocks[cols*line + col];
@@ -650,7 +650,7 @@ private:
 };
 
 template<typename Fn>
-TerminalCanvas& TerminalCanvas::stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
+BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
     auto size = this->size();
     rect = Rect(rect.p1.clamp({}, size), rect.p2.clamp({}, size)).sorted();
     rect.p2 += Point(1, 1);
@@ -691,7 +691,7 @@ TerminalCanvas& TerminalCanvas::stroke(Color const& color, Rect rect, Fn&& fn, T
 }
 
 template<typename Fn>
-TerminalCanvas& TerminalCanvas::fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
+BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
     rect = rect.sorted();
     rect.p2 += Point(1, 1);
     Rect block_rect{
@@ -726,7 +726,7 @@ TerminalCanvas& TerminalCanvas::fill(Color const& color, Rect rect, Fn&& fn, Ter
 }
 
 template<typename>
-void TerminalCanvas::const_iterator::fetch_data() {
+void BrailleCanvas::const_iterator::fetch_data() {
     data.clear();
 
     // Reset attributes + Bold mode
@@ -782,12 +782,12 @@ void TerminalCanvas::const_iterator::fetch_data() {
         data.append("\x1b[0m");
 }
 
-TerminalCanvas::const_iterator operator+(TerminalCanvas::const_iterator::difference_type n,
-                                         TerminalCanvas::const_iterator const& it) {
+BrailleCanvas::const_iterator operator+(BrailleCanvas::const_iterator::difference_type n,
+                                         BrailleCanvas::const_iterator const& it) {
     return it + n;
 }
 
-std::ostream& operator<<(std::ostream& stream, TerminalCanvas const& canvas) {
+std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canvas) {
     for (auto const& line: canvas) {
         stream << line << '\n';
     }
@@ -795,4 +795,4 @@ std::ostream& operator<<(std::ostream& stream, TerminalCanvas const& canvas) {
     return stream;
 }
 
-};
+} /* namespace plot */

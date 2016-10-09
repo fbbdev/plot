@@ -6,7 +6,7 @@
 using namespace plot;
 
 int main() {
-    TerminalCanvas canvas({ 70, 20 }, TerminalColor::Iso24bit);
+    BrailleCanvas canvas({ 70, 20 }, TerminalColor::Iso24bit);
 
     canvas.rect({ 1.0f, 0.35f, 0.0f }, { 0.0f, 0.2f, 1.0f }, { { 11, 11 }, { 40, 40 } })
           .line({ 0.4f,  1.0f, 0.4f }, { 12, 12 }, { 39, 39 }, TerminalOp::ClipDst)

@@ -9,15 +9,15 @@
 
 using namespace plot;
 
-volatile static std::sig_atomic_t run = true;
+static volatile std::sig_atomic_t run = true;
 
 int main() {
     std::signal(SIGINT, [](int) {
         run = false;
     });
 
-    TerminalCanvas waves({ 30, 7 }, TerminalColor::Iso24bit);
-    TerminalCanvas circle({ 34, 17 }, TerminalColor::Iso24bit);
+    BrailleCanvas waves({ 30, 7 }, TerminalColor::Iso24bit);
+    BrailleCanvas circle({ 34, 17 }, TerminalColor::Iso24bit);
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
