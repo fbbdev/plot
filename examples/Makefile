@@ -1,7 +1,7 @@
 default: all
 
 CXX=g++
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic -Werror
 LIBS = -lm
 
 ifdef DEBUG
