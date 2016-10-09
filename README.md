@@ -1,4 +1,4 @@
-# C++ Terminal plotting library
+# C++ terminal plotting library
 
 ***WARNING: Not yet complete!!***
 
