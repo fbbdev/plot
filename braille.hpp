@@ -189,8 +189,11 @@ namespace detail { namespace braille
             return it == other.it;
         }
 
-        BrailleCanvas const* canvas;
-        image_t::const_iterator it;
+        BrailleCanvas const* canvas = nullptr;
+        image_t::const_iterator it{};
+
+    public:
+        line_t() = default;
     };
 } /* namespace braille */ } /* namespace detail */
 
@@ -605,7 +608,7 @@ inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canva
 namespace detail { namespace braille
 {
     inline line_t line_t::next() const {
-        return { canvas, it + image_t::const_iterator::difference_type(canvas->cols) };
+        return { canvas, std::next(it, canvas->cols) };
     }
 
     template<typename>
@@ -638,5 +641,27 @@ namespace detail { namespace braille
         return stream << term.reset();
     }
 } /* namespace braille */ } /* namespace detail */
+
+
+namespace detail
+{
+    template<>
+    struct block_ref_traits<BrailleCanvas, true>
+    {
+        using iterator = typename BrailleCanvas::const_iterator;
+
+        static Size size(BrailleCanvas const& canvas) {
+            return canvas.term_size();
+        }
+
+        static iterator begin(BrailleCanvas const& canvas) {
+            return canvas.begin();
+        }
+
+        static iterator end(BrailleCanvas const& canvas) {
+            return canvas.end();
+        }
+    };
+} /* namespace detail */
 
 } /* namespace plot */

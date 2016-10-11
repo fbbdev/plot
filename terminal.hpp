@@ -22,7 +22,8 @@
 namespace plot
 {
 
-enum class TerminalMode {
+enum class TerminalMode
+{
     None,       // Color not supported
     Minimal,    // Attribute reset and bold
     Ansi,       // ANSI 8-color palette
@@ -31,7 +32,8 @@ enum class TerminalMode {
     Windows     // Windows console API
 };
 
-enum class TerminalOp {
+enum class TerminalOp
+{
     Over,       // Paint source over destination, mix character colors
     ClipDst,    // Erase destination where source is not empty
     ClipSrc     // Ignore source where destination is not empty
@@ -199,7 +201,8 @@ namespace ansi
         }
     } /* namespace detail */
 
-    enum class Color {
+    enum class Color
+    {
         Black = 0,
         Red = 1,
         Green = 2,

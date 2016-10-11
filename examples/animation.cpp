@@ -13,6 +13,7 @@ int main() {
     term.detect();
 
     BrailleCanvas canvas({ 30, 7 }, term);
+    auto layout = margin(frame(&canvas, term));
 
     Rect rect({ 0, 0 }, canvas.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
@@ -44,24 +45,10 @@ int main() {
               .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
               .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-        std::cout << term.clear_line() << '\n' << term.clear_line()
-                  << term.reset() << "  ┌";
+        for (auto const& line: layout)
+            std::cout << term.clear_line() << line << '\n';
 
-        for (int i = 0; i < canvas.term_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┐\n";
-
-        for (auto const& line: canvas) {
-            std::cout << term.clear_line() << term.reset() << "  │" << line << "│\n";
-        }
-
-        std::cout << term.clear_line() << term.reset() << "  └";
-
-        for (int i = 0; i < canvas.term_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┘\n" << std::endl;
+        std::cout << std::flush;
 
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(40ms);
@@ -70,7 +57,7 @@ int main() {
         if (t >= 1.0f)
             t -= std::trunc(t);
 
-        std::cout << term.move_up(canvas.term_size().y + 4) << std::flush;
+        std::cout << term.move_up(layout.size().y) << std::flush;
     }
 
     return 0;

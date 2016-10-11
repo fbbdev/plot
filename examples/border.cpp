@@ -1,4 +1,5 @@
 #include "../braille.hpp"
+#include "../layout.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -30,23 +31,7 @@ int main() {
           })
           .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-    std::cout << term.reset() << "\n  ┌";
-
-    for (int i = 0; i < canvas.term_size().x; ++i)
-        std::cout << "─";
-
-    std::cout << "┐\n";
-
-    for (auto const& line: canvas) {
-        std::cout << term.reset() << "  │" << line << "│\n";
-    }
-
-    std::cout << term.reset() << "  └";
-
-    for (int i = 0; i < canvas.term_size().x; ++i)
-        std::cout << "─";
-
-    std::cout << "┘\n" << std::endl;
+    std::cout << margin(frame(&canvas, term)) << std::flush;
 
     return 0;
 }
