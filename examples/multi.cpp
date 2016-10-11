@@ -16,8 +16,11 @@ int main() {
         run = false;
     });
 
-    BrailleCanvas waves({ 30, 7 }, TerminalColor::Iso24bit);
-    BrailleCanvas circle({ 34, 17 }, TerminalColor::Iso24bit);
+    TerminalInfo term;
+    term.detect();
+
+    BrailleCanvas waves({ 30, 7 }, term);
+    BrailleCanvas circle({ 34, 17 }, term);
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
@@ -26,6 +29,15 @@ int main() {
     auto circle_size = circle_rect.size() + Point(1, 1);
     Point circle_center(circle_size.x/2, circle_size.y/2);
     auto circle_radius = circle_center - Point(4, 4);
+
+    // Empty line between the smaller graphs:
+    // Indent: 2 chars
+    // Left border: 1 char
+    // Graph: waves.term_size().x chars
+    // Right border: 1 char
+    // Horizontal margin: 2 chars
+    // Total: waves.term_size().x + 6 chars
+    const std::string vertical_margin(waves.term_size().x + 6, ' ');
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2;
@@ -61,19 +73,19 @@ int main() {
         waves.clear()
              .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
              .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
-             .line({ 1.0f, 1.0f, 1.0f }, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+             .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
         Point pos(
             circle_center.x + std::lround(circle_radius.x*sincos(t, N)),
             circle_center.y - std::lround(circle_radius.y*sin2(t, N)));
 
         circle.clear()
-              .line({ 1.0f, 1.0f, 1.0f }, { circle_center.x, 0 }, { circle_center.x, circle_rect.p2.y })
-              .line({ 1.0f, 1.0f, 1.0f }, { 0, circle_center.y }, { circle_rect.p2.x, circle_center.y })
+              .line(term.foreground_color, { circle_center.x, 0 }, { circle_center.x, circle_rect.p2.y })
+              .line(term.foreground_color, { 0, circle_center.y }, { circle_rect.p2.x, circle_center.y })
               .line({ 1.0f, 0.8f, 0.2f }, { circle_center.x, pos.y }, pos)
               .line({ 0.4f, 1.0f, 0.4f }, { pos.x, circle_center.y }, pos)
-              .line({ 1.0f, 1.0f, 1.0f }, circle_center, pos)
-              .ellipse({ 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { pos - Point(1, 1), pos + Point(1, 1) })
+              .line(term.foreground_color, circle_center, pos)
+              .ellipse(term.foreground_color, term.foreground_color, { pos - Point(1, 1), pos + Point(1, 1) })
               .push();
 
         auto track_length = N/Coord(2*f)/2;
@@ -84,12 +96,13 @@ int main() {
             Point prev(
                 circle_center.x + std::lround(circle_radius.x*sincos(t, N - x - 1)),
                 circle_center.y - std::lround(circle_radius.y*sin2(t, N - x - 1)));
-            circle.line(Color(1.0f, 1.0f, 1.0f, (float(track_length - x)/track_length)), pos, prev);
+            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), pos, prev);
         }
 
         circle.pop();
 
-        std::cout << "\x1b[K\n\x1b[K  \x1b[0m┌";
+        std::cout << term.clear_line() << '\n' << term.clear_line()
+                  << term.reset() << "  ┌";
 
         for (int i = 0; i < waves.term_size().x; ++i)
             std::cout << "─";
@@ -104,26 +117,26 @@ int main() {
         auto circle_it = circle.begin();
 
         for (auto const& line: waves) {
-            std::cout << "\x1b[K  \x1b[0m│" << line << "│  │" << *circle_it << "│\n";
+            std::cout << term.clear_line() << term.reset() << "  │" << line << "│  │" << *circle_it << "│\n";
             ++circle_it;
         }
 
-        std::cout << "\x1b[K  \x1b[0m└";
+        std::cout << term.clear_line() << term.reset() << "  └";
 
         for (int i = 0; i < waves.term_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┘  │" << *circle_it << "│\n";
         ++circle_it;
-        std::cout << "\x1b[K   " << std::string(waves.term_size().x, ' ') << "   │" << *circle_it << "│\n";
+        std::cout << term.clear_line() << vertical_margin << "│" << *circle_it << "│\n";
         ++circle_it;
 
         waves.clear()
              .stroke({ 0.4f, 1.0f, 0.4f }, rect, stroke_fn(sin2, t))
              .stroke({ 1.0f, 0.8f, 0.2f }, rect, stroke_fn(sincos, t))
-             .line({ 1.0f, 1.0f, 1.0f }, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+             .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-        std::cout << "\x1b[K  \x1b[0m┌";
+        std::cout << term.clear_line() << term.reset() << "  ┌";
 
         for (int i = 0; i < waves.term_size().x; ++i)
             std::cout << "─";
@@ -132,11 +145,11 @@ int main() {
         ++circle_it;
 
         for (auto const& line: waves) {
-            std::cout << "\x1b[K  \x1b[0m│" << line << "│  │" << *circle_it << "│\n";
+            std::cout << term.clear_line() << term.reset() << "  │" << line << "│  │" << *circle_it << "│\n";
             ++circle_it;
         }
 
-        std::cout << "\x1b[K  \x1b[0m└";
+        std::cout << term.clear_line() << term.reset() << "  └";
 
         for (int i = 0; i < waves.term_size().x; ++i)
             std::cout << "─";
@@ -161,7 +174,7 @@ int main() {
         if (t >= 1.0f)
             t -= std::trunc(t);
 
-        std::cout << "\x1b[" << (2*(waves.term_size().y + 2) + 3) << "A" << std::flush;
+        std::cout << term.move_up(circle.term_size().y + 4) << std::flush;
     }
 
     return 0;

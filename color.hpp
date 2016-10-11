@@ -74,6 +74,22 @@ struct Color {
         };
     }
 
+    Color red(float value) const {
+        return { value, g, b, a };
+    }
+
+    Color green(float value) const {
+        return { r, value, b, a };
+    }
+
+    Color blue(float value) const {
+        return { r, g, value, a };
+    }
+
+    Color alpha(float value) const {
+        return { r, g, b, value };
+    }
+
     Color& operator+=(Color const& other) {
         return (*this) = (*this) + other;
     }

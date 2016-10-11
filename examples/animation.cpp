@@ -9,7 +9,10 @@
 using namespace plot;
 
 int main() {
-    BrailleCanvas canvas({ 30, 7 }, TerminalColor::Iso24bit);
+    TerminalInfo term;
+    term.detect();
+
+    BrailleCanvas canvas({ 30, 7 }, term);
 
     Rect rect({ 0, 0 }, canvas.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
@@ -39,9 +42,10 @@ int main() {
         canvas.clear()
               .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
               .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
-              .line({ 1.0f, 1.0f, 1.0f }, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+              .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-        std::cout << "\x1b[K\n\x1b[K  \x1b[0m┌";
+        std::cout << term.clear_line() << '\n' << term.clear_line()
+                  << term.reset() << "  ┌";
 
         for (int i = 0; i < canvas.term_size().x; ++i)
             std::cout << "─";
@@ -49,10 +53,10 @@ int main() {
         std::cout << "┐\n";
 
         for (auto const& line: canvas) {
-            std::cout << "\x1b[K  \x1b[0m│" << line << "│\n";
+            std::cout << term.clear_line() << term.reset() << "  │" << line << "│\n";
         }
 
-        std::cout << "\x1b[K  \x1b[0m└";
+        std::cout << term.clear_line() << term.reset() << "  └";
 
         for (int i = 0; i < canvas.term_size().x; ++i)
             std::cout << "─";
@@ -66,7 +70,8 @@ int main() {
         if (t >= 1.0f)
             t -= std::trunc(t);
 
-        std::cout << "\x1b[" << canvas.term_size().y + 4 << "A" << std::flush;
+        std::cout << term.move_up(canvas.term_size().y + 4) << std::flush;
     }
+
     return 0;
 }

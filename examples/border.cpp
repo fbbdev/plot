@@ -7,7 +7,10 @@
 using namespace plot;
 
 int main() {
-    BrailleCanvas canvas({ 30, 7 }, TerminalColor::Iso24bit);
+    TerminalInfo term;
+    term.detect();
+
+    BrailleCanvas canvas({ 30, 7 }, term);
 
     Rect rect({ 0, 0 }, canvas.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
@@ -25,9 +28,9 @@ int main() {
                     end  = y0 + A - std::lround(A*std::cos(2*3.141592f*f*(x+1)/N));
               return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
           })
-          .line({ 1.0f, 1.0f, 1.0f }, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+          .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-    std::cout << "\n  \x1b[0m┌";
+    std::cout << term.reset() << "\n  ┌";
 
     for (int i = 0; i < canvas.term_size().x; ++i)
         std::cout << "─";
@@ -35,10 +38,10 @@ int main() {
     std::cout << "┐\n";
 
     for (auto const& line: canvas) {
-        std::cout << "  \x1b[0m│" << line << "│\n";
+        std::cout << term.reset() << "  │" << line << "│\n";
     }
 
-    std::cout << "  \x1b[0m└";
+    std::cout << term.reset() << "  └";
 
     for (int i = 0; i < canvas.term_size().x; ++i)
         std::cout << "─";
