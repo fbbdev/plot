@@ -12,10 +12,13 @@ endif
 
 headers := $(wildcard ../*.hpp)
 
-all: build/canvas build/border build/animation build/multi
+all: build/terminal build/canvas build/border build/animation build/multi
 
 build:
 	mkdir -p build
+
+build/terminal: terminal.cpp $(headers) | build
+	$(CXX) $(CXXFLAGS) -o build/terminal terminal.cpp $(LIBS)
 
 build/canvas: canvas.cpp $(headers) | build
 	$(CXX) $(CXXFLAGS) -o build/canvas canvas.cpp $(LIBS)
