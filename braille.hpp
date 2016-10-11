@@ -8,7 +8,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
 #include <algorithm>
 #include <forward_list>
 #include <iterator>
@@ -19,7 +18,9 @@
 namespace plot
 {
 
-namespace detail
+class BrailleCanvas;
+
+namespace detail { namespace braille
 {
     // Unicode braille patterns: 0x28xx
     // See https://en.wikipedia.org/wiki/Braille_Patterns
@@ -119,60 +120,9 @@ namespace detail
         std::uint8_t pixels = 0;
     };
 
-    using ansi_color_t = std::pair<std::uint8_t, bool>;
-    using ansi_palette_entry_t = std::pair<Color, ansi_color_t>;
-
-    static constexpr ansi_palette_entry_t ansi_palette[16] = {
-        { { 0, 0, 0 }, { 0, false } },                                      // Black
-        { { 170.0f/255.0f, 0, 0 }, { 1, false } },                          // Red
-        { { 0, 170.0f/255.0f, 0 }, { 2, false } },                          // Green
-        { { 170.0f/255.0f, 85.0f/255.0f, 0 }, { 3, false } },               // Brown
-        { { 0, 0, 170.0f/255.0f }, { 4, false } },                          // Blue
-        { { 170.0f/255.0f, 0, 170.0f/255.0f }, { 5, false } },              // Magenta
-        { { 0, 170.0f/255.0f, 170.0f/255.0f }, { 6, false } },              // Cyan
-        { { 170.0f/255.0f, 170.0f/255.0f, 170.0f/255.0f }, { 7, false } },  // Gray
-        { { 85.0f/255.0f, 85.0f/255.0f, 85.0f/255.0f }, { 0, true } },      // Darkgray
-        { { 1.0f, 85.0f/255.0f, 85.0f/255.0f }, { 1, true } },              // Bright Red
-        { { 85.0f/255.0f, 1.0f, 85.0f/255.0f }, { 2, true } },              // Bright green
-        { { 1.0f, 1.0f, 85.0f/255.0f }, { 3, true } },                      // Yellow
-        { { 85.0f/255.0f, 85.0f/255.0f, 1.0f }, { 4, true } },              // Bright Blue
-        { { 1.0f, 85.0f/255.0f, 1.0f }, { 5, true } },                      // Bright Magenta
-        { { 85.0f/255.0f, 1.0f, 1.0f }, { 6, true } },                      // Bright Cyan
-        { { 1.0f, 1.0f, 1.0f }, { 7, true } }                               // White
-    };
-
-    inline ansi_palette_entry_t find_ansi_entry(Color c) {
-        return *std::min_element(ansi_palette, ansi_palette + 16, [c](auto const& e1, auto const& e2) {
-            return e1.first.distance(c) < e2.first.distance(c);
-        });
-    }
-
-    inline ansi_color_t to_ansi(Color c) {
-        return find_ansi_entry(c).second;
-    }
-
-    inline std::uint8_t to_xterm256(Color c) {
-        using utils::clamp;
-        auto ansi_entry = find_ansi_entry(c);
-        auto color = c.color32(5);
-        std::uint8_t gray = std::lround(clamp(0.3f*c.r + 0.59f*c.g + 0.11f*c.b, 0.0f, 1.0f)*23);
-
-        auto ansi_dist = ansi_entry.first.distance(c);
-        auto color_dist = Color(color, 5).distance(c);
-        auto gray_dist = Color({ gray, gray, gray, 255 }, 23).distance(c);
-
-        if (color_dist <= gray_dist && color_dist <= ansi_dist) {
-            return 16 + 36*color.r + 6*color.g + color.b;
-        } else if (gray_dist <= ansi_dist) {
-            return gray + 0xe8;
-        } else {
-            return ansi_entry.second.first + 8*ansi_entry.second.second;
-        }
-    }
-
-    class image_t : public std::vector<detail::block_t>
+    class image_t : public std::vector<block_t>
     {
-        using base = std::vector<detail::block_t>;
+        using base = std::vector<block_t>;
 
     public:
         using base::base;
@@ -182,12 +132,12 @@ namespace detail
             {}
 
         void clear() {
-            assign(size(), detail::block_t());
+            assign(size(), block_t());
         }
 
         void resize(Size from, Size to) {
             if (std::size_t(to.y*to.x) > size())
-                resize(to.y*to.x, detail::block_t{});
+                resize(to.y*to.x, block_t());
 
             auto first = begin();
 
@@ -197,7 +147,7 @@ namespace detail
             } else if (to.x > from.x) {
                 for (Coord line = std::min(to.y, from.y) - 1; line > 0; --line) {
                     std::copy_backward(first + line*from.x, first + line*from.x + from.x, first + line*to.x + from.x);
-                    std::fill(first + line*from.x, first + line*to.x, detail::block_t{});
+                    std::fill(first + line*from.x, first + line*to.x, block_t());
                 }
             }
 
@@ -215,143 +165,161 @@ namespace detail
     private:
         using base::resize;
     };
-} /* namespace detail */
 
+    class line_t;
 
-class BrailleCanvas {
-public:
-    using value_type = std::string const;
-    using reference = std::string const&;
-    using const_reference = std::string const&;
+    template<typename = void>
+    std::ostream& operator<<(std::ostream& stream, line_t const& line);
 
-    class const_iterator {
+    class line_t {
+        friend class iterator;
+        template<typename>
+        friend std::ostream& operator<<(std::ostream&, line_t const&);
+
+        line_t(BrailleCanvas const* canvas, image_t::const_iterator it)
+            : canvas(canvas), it(it)
+            {}
+
+        line_t move(image_t::const_iterator::difference_type n) const;
+
+        image_t::const_iterator::difference_type distance(line_t const& other) const;
+
+        BrailleCanvas const* canvas;
+        image_t::const_iterator it;
+    };
+
+    class iterator {
     public:
-        using value_type = std::string const;
-        using reference = std::string const&;
-        using pointer = std::string const*;
-        using difference_type = Coord;
+        using value_type = line_t;
+        using reference = value_type const&;
+        using pointer = value_type const*;
+        using difference_type = image_t::const_iterator::difference_type;
         using iterator_category = std::random_access_iterator_tag;
 
-        const_iterator() = default;
+        iterator() = default;
 
         reference operator*() const {
-            return data;
+            return line;
         }
 
         pointer operator->() const {
-            return &data;
+            return &line;
         }
 
-        const_iterator& operator++() {
-            line += canvas->cols;
-            fetch_data();
+        iterator& operator++() {
+            line = line.move(1);
             return *this;
         }
 
-        const_iterator operator++(int) {
-            const_iterator prev = std::move(*this);
-            line += canvas->cols;
-            fetch_data();
+        iterator operator++(int) {
+            iterator prev = std::move(*this);
+            line = line.move(1);
             return prev;
         }
 
-        const_iterator& operator--() {
-            line -= canvas->cols;
-            fetch_data();
+        iterator& operator--() {
+            line = line.move(-1);
             return *this;
         }
 
-        const_iterator operator--(int) {
-            const_iterator prev = std::move(*this);
-            line -= canvas->cols;
-            fetch_data();
+        iterator operator--(int) {
+            iterator prev = std::move(*this);
+            line = line.move(-1);
             return prev;
         }
 
-        const_iterator operator+(difference_type n) const {
-            return { canvas, line + n*difference_type(canvas->cols) };
+        iterator operator+(difference_type n) const {
+            return { line.move(n) };
         }
 
-        const_iterator& operator+=(difference_type n) {
-            line += n*difference_type(canvas->cols);
-            fetch_data();
+        iterator& operator+=(difference_type n) {
+            line = line.move(n);
             return *this;
         }
 
-        const_iterator operator-(difference_type n) const {
-            return { canvas, line - n*difference_type(canvas->cols) };
+        iterator operator-(difference_type n) const {
+            return { line.move(-n) };
         }
 
-        const_iterator& operator-=(difference_type n) {
-            line -= n*difference_type(canvas->cols);
-            fetch_data();
+        iterator& operator-=(difference_type n) {
+            line = line.move(-n);
             return *this;
         }
 
         value_type operator[](difference_type n) const {
-            return (*this + n).data;
+            return line.move(n);
         }
 
-        difference_type operator-(const_iterator const& other) const {
-            return (line - other.line)/canvas->cols;
+        difference_type operator-(iterator const& other) const {
+            return line.distance(other.line);
         }
 
-        bool operator==(const_iterator const& other) const {
-            return line == other.line;
+        bool operator==(iterator const& other) const {
+            return line.it == other.line.it;
         }
 
-        bool operator!=(const_iterator const& other) const {
-            return line != other.line;
+        bool operator!=(iterator const& other) const {
+            return line.it != other.line.it;
         }
 
-        bool operator<(const_iterator const& other) const {
-            return line < other.line;
+        bool operator<(iterator const& other) const {
+            return line.it < other.line.it;
         }
 
-        bool operator<=(const_iterator const& other) const {
-            return line <= other.line;
+        bool operator<=(iterator const& other) const {
+            return line.it <= other.line.it;
         }
 
-        bool operator>(const_iterator const& other) const {
-            return line > other.line;
+        bool operator>(iterator const& other) const {
+            return line.it > other.line.it;
         }
 
-        bool operator>=(const_iterator const& other) const {
-            return line >= other.line;
+        bool operator>=(iterator const& other) const {
+            return line.it >= other.line.it;
         }
 
     private:
-        friend class BrailleCanvas;
+        friend class plot::BrailleCanvas;
 
-        const_iterator(BrailleCanvas const* canvas, detail::image_t::const_iterator line)
-            : canvas(canvas), line(line)
-        {
-            fetch_data();
-        }
+        iterator(BrailleCanvas const* canvas, image_t::const_iterator it)
+            : line(canvas, it)
+            {}
 
-        // XXX: Not a real template, just to avoid declaring this inline
-        template<typename = void>
-        void fetch_data();
+        iterator(line_t line)
+            : line(line)
+            {}
 
-        BrailleCanvas const* canvas = nullptr;
-        detail::image_t::const_iterator line{};
-        std::string data{};
+        line_t line;
     };
 
+    inline iterator operator+(iterator::difference_type n, iterator const& it) {
+        return it + n;
+    }
+} /* namespace braille */ } /* namespace detail */
+
+
+class BrailleCanvas {
+public:
+    using value_type = detail::braille::line_t;
+    using reference = value_type const&;
+    using const_reference = value_type const&;
+    using const_iterator = detail::braille::iterator;
     using iterator = const_iterator;
-    using difference_type = std::ptrdiff_t;
+    using difference_type = const_iterator::difference_type;
     using size_type = std::size_t;
 
     BrailleCanvas() = default;
 
-    BrailleCanvas(Size term_size, TerminalColor mode = TerminalColor::None)
-        : lines(term_size.y), cols(term_size.x), blocks(term_size), mode(mode)
+    BrailleCanvas(Size term_size, TerminalInfo term = TerminalInfo())
+        : lines(term_size.y), cols(term_size.x), blocks(term_size),
+          background(term.background_color), term(term)
     {
         available_layers.emplace_front(term_size);
     }
 
-    BrailleCanvas(Color background, Size term_size, TerminalColor mode = TerminalColor::None)
-        : lines(term_size.y), cols(term_size.x), blocks(term_size), background(background), mode(mode)
+    BrailleCanvas(Color background, Size term_size, TerminalInfo term = TerminalInfo())
+        : lines(term_size.y), cols(term_size.x), blocks(term_size),
+          background(background), term(term)
     {
         available_layers.emplace_front(term_size);
     }
@@ -440,7 +408,7 @@ public:
             auto ybase = 4*line;
             for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
                 auto xbase = 2*col;
-                detail::block_t src({ 0, 0, 0, 0 },
+                detail::braille::block_t src({ 0, 0, 0, 0 },
                     rect.contains({ xbase, ybase }),
                     rect.contains({ xbase, ybase+1 }),
                     rect.contains({ xbase, ybase+2 }),
@@ -464,7 +432,7 @@ public:
 
     BrailleCanvas& dot(Color const& color, Point p, TerminalOp op = TerminalOp::Over) {
         if (Rect({}, size()).contains(p)) {
-            paint(p.y / 4, p.x / 2, detail::block_t(color).set(p.x % 2, p.y % 4), op);
+            paint(p.y / 4, p.x / 2, detail::braille::block_t(color).set(p.x % 2, p.y % 4), op);
         }
         return *this;
     }
@@ -624,29 +592,32 @@ public:
     }
 
 private:
-    friend class BrailleCanvas::const_iterator;
+    friend value_type;
+    template<typename>
+    friend std::ostream& detail::braille::operator<<(std::ostream&, detail::braille::line_t const&);
 
-    detail::block_t& block(std::size_t line, std::size_t col) {
+    detail::braille::block_t& block(std::size_t line, std::size_t col) {
         return blocks[cols*line + col];
     }
 
-    detail::block_t const& block(std::size_t line, std::size_t col) const {
+    detail::braille::block_t const& block(std::size_t line, std::size_t col) const {
         return blocks[cols*line + col];
     }
 
-    detail::block_t& paint(std::size_t line, std::size_t col, detail::block_t const& src, TerminalOp op) {
+    detail::braille::block_t& paint(std::size_t line, std::size_t col,
+                                    detail::braille::block_t const& src, TerminalOp op) {
         auto& dst = block(line, col);
         return dst = src.paint(dst, op);
     }
 
     std::size_t lines = 0, cols = 0;
-    detail::image_t blocks;
+    detail::braille::image_t blocks;
 
-    std::forward_list<detail::image_t> stack;
-    std::forward_list<detail::image_t> available_layers;
+    std::forward_list<detail::braille::image_t> stack;
+    std::forward_list<detail::braille::image_t> available_layers;
 
     Color background = { 0, 0, 0, 1 };
-    TerminalColor mode = TerminalColor::None;
+    TerminalInfo term;
 };
 
 template<typename Fn>
@@ -668,7 +639,7 @@ BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rect, Fn&& fn, Ter
             auto col_start = utils::clamp(2*col, rect.p1.x, rect.p2.x),
                  col_end = utils::clamp(2*col + 2, rect.p1.x, rect.p2.x);
 
-            detail::block_t src(color);
+            detail::braille::block_t src(color);
 
             for (auto x = col_start; x < col_end; ++x) {
                 auto ybounds = fn(x);
@@ -708,7 +679,7 @@ BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rect, Fn&& fn, Termi
         auto ybase = 4*line;
         for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
             auto xbase = 2*col;
-            detail::block_t src(color,
+            detail::braille::block_t src(color,
                 set({ xbase, ybase }),
                 set({ xbase, ybase+1 }),
                 set({ xbase, ybase+2 }),
@@ -725,74 +696,54 @@ BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rect, Fn&& fn, Termi
     return *this;
 }
 
-template<typename>
-void BrailleCanvas::const_iterator::fetch_data() {
-    data.clear();
 
-    // Reset attributes + Bold mode
-    // XXX: Braille patterns are not rendered correctly in normal mode
-    if (canvas->mode != TerminalColor::None)
-        data.append("\x1b[0;1m");
-
-    // Unicode braille patterns are 0x28xx
-    // In binary:
-    //   0b00101000'xxxxxxxx
-    // In UTF-8:
-    //   0b1110'0010, 0b10'1000'xx 0b10'xxxxxx
-    std::uint8_t block[3] = { 0b1110'0010, 0, 0 };
-
-    char buffer[32] = {};
-
-    Color color;
-    Color32 c32;
-    detail::ansi_color_t ansi_color;
-
-    for (auto it = line, end = line+canvas->cols; it != end; ++it) {
-        color = it->color.over(canvas->background).premultiplied();
-
-        switch (canvas->mode) {
-            case TerminalColor::Ansi:
-                ansi_color = detail::to_ansi(color);
-                std::sprintf(buffer, "\x1b[%dm", 30 + ansi_color.first);
-                break;
-            case TerminalColor::Ansi256:
-                std::sprintf(buffer, "\x1b[38;5;%dm", detail::to_xterm256(color));
-                break;
-            case TerminalColor::Iso24bit:
-                c32 = color.color32();
-                std::sprintf(buffer, "\x1b[38;2;%d;%d;%dm", c32.r, c32.g, c32.b);
-                break;
-            default:
-                break;
-        }
-
-        if (it->pixels) {
-            data.append(buffer);
-
-            block[1] = 0b10'1000'00 | ((it->pixels & 0b11'000000) >> 6);
-            block[2] = 0b10'000000 | (it->pixels & 0b00'111111);
-            data.append((const char*) block, 3);
-        } else {
-            data.append(1, ' ');
-        }
-    }
-
-    // Reset terminal attributes
-    if (canvas->mode != TerminalColor::None)
-        data.append("\x1b[0m");
-}
-
-BrailleCanvas::const_iterator operator+(BrailleCanvas::const_iterator::difference_type n,
-                                         BrailleCanvas::const_iterator const& it) {
-    return it + n;
-}
-
-std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canvas) {
-    for (auto const& line: canvas) {
+inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canvas) {
+    for (auto const& line: canvas)
         stream << line << '\n';
-    }
 
     return stream;
 }
+
+
+namespace detail { namespace braille
+{
+    inline line_t line_t::move(image_t::const_iterator::difference_type n) const {
+        return { canvas, it + n*image_t::const_iterator::difference_type(canvas->cols) };
+    }
+
+    inline image_t::const_iterator::difference_type line_t::distance(line_t const& other) const {
+        return (other.it - it) / image_t::const_iterator::difference_type(canvas->cols);
+    }
+
+    template<typename>
+    std::ostream& operator<<(std::ostream& stream, line_t const& line) {
+        auto const& canvas = *line.canvas;
+        auto const& term = canvas.term;
+
+        // Reset attributes + Bold mode
+        // XXX: Empty dots in braille patterns are often rendered as empty
+        // XXX: circles unless in bold mode.
+        stream << term.reset() << term.bold();
+
+        // Unicode braille patterns are 0x28xx
+        // In binary:
+        //   0b00101000'xxxxxxxx
+        // In UTF-8:
+        //   0b1110'0010, 0b10'1000'xx 0b10'xxxxxx
+
+        for (auto it = line.it, end = line.it+canvas.cols; it != end; ++it) {
+            if (it->pixels) {
+                stream << term.foreground(it->color.over(canvas.background).premultiplied())
+                       << char(0b1110'0010)
+                       << char(0b10'1000'00 | ((it->pixels & 0b11'000000) >> 6))
+                       << char(0b10'000000 | (it->pixels & 0b00'111111));
+            } else {
+                stream << ' ';
+            }
+        }
+
+        return stream << term.reset();
+    }
+} /* namespace braille */ } /* namespace detail */
 
 } /* namespace plot */
