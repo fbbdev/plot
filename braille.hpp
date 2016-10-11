@@ -1,6 +1,7 @@
 #pragma once
 
 #include "color.hpp"
+#include "layout.hpp"
 #include "point.hpp"
 #include "rect.hpp"
 #include "terminal.hpp"
@@ -172,7 +173,9 @@ namespace detail { namespace braille
     std::ostream& operator<<(std::ostream& stream, line_t const& line);
 
     class line_t {
-        friend class iterator;
+        friend class detail::block_iterator<plot::BrailleCanvas, line_t>;
+        friend class plot::BrailleCanvas;
+
         template<typename>
         friend std::ostream& operator<<(std::ostream&, line_t const&);
 
@@ -180,121 +183,15 @@ namespace detail { namespace braille
             : canvas(canvas), it(it)
             {}
 
-        line_t move(image_t::const_iterator::difference_type n) const;
+        line_t next() const;
 
-        image_t::const_iterator::difference_type distance(line_t const& other) const;
+        bool equal(line_t const& other) const {
+            return it == other.it;
+        }
 
         BrailleCanvas const* canvas;
         image_t::const_iterator it;
     };
-
-    class iterator {
-    public:
-        using value_type = line_t;
-        using reference = value_type const&;
-        using pointer = value_type const*;
-        using difference_type = image_t::const_iterator::difference_type;
-        using iterator_category = std::random_access_iterator_tag;
-
-        iterator() = default;
-
-        reference operator*() const {
-            return line;
-        }
-
-        pointer operator->() const {
-            return &line;
-        }
-
-        iterator& operator++() {
-            line = line.move(1);
-            return *this;
-        }
-
-        iterator operator++(int) {
-            iterator prev = std::move(*this);
-            line = line.move(1);
-            return prev;
-        }
-
-        iterator& operator--() {
-            line = line.move(-1);
-            return *this;
-        }
-
-        iterator operator--(int) {
-            iterator prev = std::move(*this);
-            line = line.move(-1);
-            return prev;
-        }
-
-        iterator operator+(difference_type n) const {
-            return { line.move(n) };
-        }
-
-        iterator& operator+=(difference_type n) {
-            line = line.move(n);
-            return *this;
-        }
-
-        iterator operator-(difference_type n) const {
-            return { line.move(-n) };
-        }
-
-        iterator& operator-=(difference_type n) {
-            line = line.move(-n);
-            return *this;
-        }
-
-        value_type operator[](difference_type n) const {
-            return line.move(n);
-        }
-
-        difference_type operator-(iterator const& other) const {
-            return line.distance(other.line);
-        }
-
-        bool operator==(iterator const& other) const {
-            return line.it == other.line.it;
-        }
-
-        bool operator!=(iterator const& other) const {
-            return line.it != other.line.it;
-        }
-
-        bool operator<(iterator const& other) const {
-            return line.it < other.line.it;
-        }
-
-        bool operator<=(iterator const& other) const {
-            return line.it <= other.line.it;
-        }
-
-        bool operator>(iterator const& other) const {
-            return line.it > other.line.it;
-        }
-
-        bool operator>=(iterator const& other) const {
-            return line.it >= other.line.it;
-        }
-
-    private:
-        friend class plot::BrailleCanvas;
-
-        iterator(BrailleCanvas const* canvas, image_t::const_iterator it)
-            : line(canvas, it)
-            {}
-
-        iterator(line_t line)
-            : line(line)
-            {}
-
-        line_t line;
-    };
-
-    inline iterator operator+(iterator::difference_type n, iterator const& it) {
-        return it + n;
-    }
 } /* namespace braille */ } /* namespace detail */
 
 
@@ -303,10 +200,10 @@ public:
     using value_type = detail::braille::line_t;
     using reference = value_type const&;
     using const_reference = value_type const&;
-    using const_iterator = detail::braille::iterator;
+    using const_iterator = detail::block_iterator<BrailleCanvas, value_type>;
     using iterator = const_iterator;
     using difference_type = const_iterator::difference_type;
-    using size_type = std::size_t;
+    using size_type = Size;
 
     BrailleCanvas() = default;
 
@@ -341,11 +238,11 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { this, blocks.cbegin() };
+        return { { this, blocks.cbegin() } };
     }
 
     const_iterator cend() const {
-        return { this, blocks.cend() };
+        return { { this, blocks.cend() } };
     }
 
     BrailleCanvas& push() {
@@ -707,12 +604,8 @@ inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canva
 
 namespace detail { namespace braille
 {
-    inline line_t line_t::move(image_t::const_iterator::difference_type n) const {
-        return { canvas, it + n*image_t::const_iterator::difference_type(canvas->cols) };
-    }
-
-    inline image_t::const_iterator::difference_type line_t::distance(line_t const& other) const {
-        return (other.it - it) / image_t::const_iterator::difference_type(canvas->cols);
+    inline line_t line_t::next() const {
+        return { canvas, it + image_t::const_iterator::difference_type(canvas->cols) };
     }
 
     template<typename>
