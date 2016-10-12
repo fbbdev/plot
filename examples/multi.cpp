@@ -33,11 +33,11 @@ int main() {
     // Empty line between the smaller graphs:
     // Indent: 2 chars
     // Left border: 1 char
-    // Graph: waves.term_size().x chars
+    // Graph: waves.char_size().x chars
     // Right border: 1 char
     // Horizontal margin: 2 chars
-    // Total: waves.term_size().x + 6 chars
-    const std::string vertical_margin(waves.term_size().x + 6, ' ');
+    // Total: waves.char_size().x + 6 chars
+    const std::string vertical_margin(waves.char_size().x + 6, ' ');
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2;
@@ -104,12 +104,12 @@ int main() {
         std::cout << term.clear_line() << '\n' << term.clear_line()
                   << term.reset() << "  ┌";
 
-        for (int i = 0; i < waves.term_size().x; ++i)
+        for (int i = 0; i < waves.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┐  ┌";
 
-        for (int i = 0; i < circle.term_size().x; ++i)
+        for (int i = 0; i < circle.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┐\n";
@@ -123,7 +123,7 @@ int main() {
 
         std::cout << term.clear_line() << term.reset() << "  └";
 
-        for (int i = 0; i < waves.term_size().x; ++i)
+        for (int i = 0; i < waves.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┘  │" << *circle_it << "│\n";
@@ -138,7 +138,7 @@ int main() {
 
         std::cout << term.clear_line() << term.reset() << "  ┌";
 
-        for (int i = 0; i < waves.term_size().x; ++i)
+        for (int i = 0; i < waves.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┐  │" << *circle_it << "│\n";
@@ -151,12 +151,12 @@ int main() {
 
         std::cout << term.clear_line() << term.reset() << "  └";
 
-        for (int i = 0; i < waves.term_size().x; ++i)
+        for (int i = 0; i < waves.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┘  └";
 
-        for (int i = 0; i < circle.term_size().x; ++i)
+        for (int i = 0; i < circle.char_size().x; ++i)
             std::cout << "─";
 
         std::cout << "┘\n" << std::endl;
@@ -174,7 +174,7 @@ int main() {
         if (t >= 1.0f)
             t -= std::trunc(t);
 
-        std::cout << term.move_up(circle.term_size().y + 4) << std::flush;
+        std::cout << term.move_up(circle.char_size().y + 4) << std::flush;
     }
 
     return 0;

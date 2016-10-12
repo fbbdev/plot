@@ -119,8 +119,24 @@ namespace detail
         return it + n;
     }
 
+    template<typename T>
+    struct is_canvas
+    {
+        template<typename S>
+        static constexpr bool test(decltype(std::declval<S>().char_size()) const*) {
+            return true;
+        }
+
+        template<typename S>
+        static constexpr bool test(...) {
+            return false;
+        }
+
+        static constexpr bool value = test<T>(0);
+    };
+
     template<typename Block, bool = std::is_same<Size, decltype(std::declval<Block>().size())>::value>
-    struct block_ref_traits
+    struct normal_block_ref_traits
     {
         using iterator = single_line_adapter<Block>;
 
@@ -128,17 +144,17 @@ namespace detail
             return { block.size(), 1 };
         }
 
-        static single_line_adapter<Block> begin(Block const& block) {
+        static iterator begin(Block const& block) {
             return { &block };
         }
 
-        static single_line_adapter<Block> end(Block const& block) {
+        static iterator end(Block const& block) {
             return { &block, true };
         }
     };
 
     template<typename Block>
-    struct block_ref_traits<Block, true>
+    struct normal_block_ref_traits<Block, true>
     {
         using iterator = typename Block::const_iterator;
 
@@ -146,12 +162,23 @@ namespace detail
             return block.size();
         }
 
-        static auto begin(Block const& block) {
+        static iterator begin(Block const& block) {
             return std::begin(block);
         }
 
-        static auto end(Block const& block) {
+        static iterator end(Block const& block) {
             return std::end(block);
+        }
+    };
+
+    template<typename Block, bool = is_canvas<Block>::value>
+    struct block_ref_traits : normal_block_ref_traits<Block> {};
+
+    template<typename Block>
+    struct block_ref_traits<Block, true> : normal_block_ref_traits<Block>
+    {
+        static Size size(Block const& block) {
+            return block.char_size();
         }
     };
 

@@ -210,21 +210,21 @@ public:
 
     BrailleCanvas() = default;
 
-    BrailleCanvas(Size term_size, TerminalInfo term = TerminalInfo())
-        : lines(term_size.y), cols(term_size.x), blocks(term_size),
+    BrailleCanvas(Size char_size, TerminalInfo term = TerminalInfo())
+        : lines(char_size.y), cols(char_size.x), blocks(char_size),
           background(term.background_color), term(term)
     {
-        available_layers.emplace_front(term_size);
+        available_layers.emplace_front(char_size);
     }
 
-    BrailleCanvas(Color background, Size term_size, TerminalInfo term = TerminalInfo())
-        : lines(term_size.y), cols(term_size.x), blocks(term_size),
+    BrailleCanvas(Color background, Size char_size, TerminalInfo term = TerminalInfo())
+        : lines(char_size.y), cols(char_size.x), blocks(char_size),
           background(background), term(term)
     {
-        available_layers.emplace_front(term_size);
+        available_layers.emplace_front(char_size);
     }
 
-    Size term_size() const {
+    Size char_size() const {
         return { Coord(cols), Coord(lines) };
     }
 
@@ -250,7 +250,7 @@ public:
 
     BrailleCanvas& push() {
         if (available_layers.empty())
-            available_layers.emplace_front(term_size());
+            available_layers.emplace_front(char_size());
 
         stack.splice_after(stack.before_begin(), available_layers, available_layers.before_begin());
         blocks.swap(stack.front());
@@ -268,11 +268,11 @@ public:
     }
 
     BrailleCanvas& resize(Size size) {
-        if (size != term_size()) {
-            blocks.resize(term_size(), size);
+        if (size != char_size()) {
+            blocks.resize(char_size(), size);
 
             for (auto& layer: stack)
-                layer.resize(term_size(), size);
+                layer.resize(char_size(), size);
 
             if (!available_layers.empty()) {
                 available_layers.clear();
@@ -641,27 +641,5 @@ namespace detail { namespace braille
         return stream << term.reset();
     }
 } /* namespace braille */ } /* namespace detail */
-
-
-namespace detail
-{
-    template<>
-    struct block_ref_traits<BrailleCanvas, true>
-    {
-        using iterator = typename BrailleCanvas::const_iterator;
-
-        static Size size(BrailleCanvas const& canvas) {
-            return canvas.term_size();
-        }
-
-        static iterator begin(BrailleCanvas const& canvas) {
-            return canvas.begin();
-        }
-
-        static iterator end(BrailleCanvas const& canvas) {
-            return canvas.end();
-        }
-    };
-} /* namespace detail */
 
 } /* namespace plot */
