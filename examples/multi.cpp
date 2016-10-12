@@ -1,4 +1,5 @@
 #include "../braille.hpp"
+#include "../layout.hpp"
 
 #include <cmath>
 #include <csignal>
@@ -20,7 +21,11 @@ int main() {
     term.detect();
 
     BrailleCanvas waves({ 30, 7 }, term);
-    BrailleCanvas circle({ 34, 17 }, term);
+    BrailleCanvas mul_waves(waves.char_size(), term);
+    BrailleCanvas circle({ 2*(waves.char_size().y + mul_waves.char_size().y + 3),
+                           waves.char_size().y + mul_waves.char_size().y + 3 }, term);
+
+    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle)));
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
@@ -29,15 +34,6 @@ int main() {
     auto circle_size = circle_rect.size() + Point(1, 1);
     Point circle_center(circle_size.x/2, circle_size.y/2);
     auto circle_radius = circle_center - Point(4, 4);
-
-    // Empty line between the smaller graphs:
-    // Indent: 2 chars
-    // Left border: 1 char
-    // Graph: waves.char_size().x chars
-    // Right border: 1 char
-    // Horizontal margin: 2 chars
-    // Total: waves.char_size().x + 6 chars
-    const std::string vertical_margin(waves.char_size().x + 6, ' ');
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2;
@@ -75,6 +71,11 @@ int main() {
              .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
              .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
+        mul_waves.clear()
+                 .stroke({ 0.4f, 1.0f, 0.4f }, rect, stroke_fn(sin2, t))
+                 .stroke({ 1.0f, 0.8f, 0.2f }, rect, stroke_fn(sincos, t))
+                 .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+
         Point pos(
             circle_center.x + std::lround(circle_radius.x*sincos(t, N)),
             circle_center.y - std::lround(circle_radius.y*sin2(t, N)));
@@ -101,65 +102,7 @@ int main() {
 
         circle.pop();
 
-        std::cout << term.clear_line() << '\n' << term.clear_line()
-                  << term.reset() << "  ┌";
-
-        for (int i = 0; i < waves.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┐  ┌";
-
-        for (int i = 0; i < circle.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┐\n";
-
-        auto circle_it = circle.begin();
-
-        for (auto const& line: waves) {
-            std::cout << term.clear_line() << term.reset() << "  │" << line << "│  │" << *circle_it << "│\n";
-            ++circle_it;
-        }
-
-        std::cout << term.clear_line() << term.reset() << "  └";
-
-        for (int i = 0; i < waves.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┘  │" << *circle_it << "│\n";
-        ++circle_it;
-        std::cout << term.clear_line() << vertical_margin << "│" << *circle_it << "│\n";
-        ++circle_it;
-
-        waves.clear()
-             .stroke({ 0.4f, 1.0f, 0.4f }, rect, stroke_fn(sin2, t))
-             .stroke({ 1.0f, 0.8f, 0.2f }, rect, stroke_fn(sincos, t))
-             .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
-
-        std::cout << term.clear_line() << term.reset() << "  ┌";
-
-        for (int i = 0; i < waves.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┐  │" << *circle_it << "│\n";
-        ++circle_it;
-
-        for (auto const& line: waves) {
-            std::cout << term.clear_line() << term.reset() << "  │" << line << "│  │" << *circle_it << "│\n";
-            ++circle_it;
-        }
-
-        std::cout << term.clear_line() << term.reset() << "  └";
-
-        for (int i = 0; i < waves.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┘  └";
-
-        for (int i = 0; i < circle.char_size().x; ++i)
-            std::cout << "─";
-
-        std::cout << "┘\n" << std::endl;
+        std::cout << layout << std::flush;
 
         if (!run)
             break;
@@ -174,7 +117,7 @@ int main() {
         if (t >= 1.0f)
             t -= std::trunc(t);
 
-        std::cout << term.move_up(circle.char_size().y + 4) << std::flush;
+        std::cout << term.move_up(layout.size().y) << std::flush;
     }
 
     return 0;

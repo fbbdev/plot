@@ -5,9 +5,11 @@
 #include "terminal.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
 #include <iomanip>
 #include <iterator>
 #include <ostream>
+#include <tuple>
 #include <type_traits>
 
 namespace plot
@@ -247,12 +249,12 @@ struct Border {
                 left = right = "┃";
                 break;
             case BorderStyle::Dashed:
-                top = bottom = "╌";
-                left = right = "┆";
+                top = "╴"; bottom = "╶";
+                left = "╷"; right = "╵";
                 break;
             case BorderStyle::DashedBold:
-                top = bottom = "╍";
-                left = right = "┇";
+                top = "╸"; bottom = "╺";
+                left = "╻"; right = "╹";
                 break;
             case BorderStyle::Dotted:
                 top = bottom = "┈";
@@ -318,7 +320,7 @@ namespace detail
 
         margin_line(Margin<Block> const* margin, std::ptrdiff_t overflow,
                     block_iterator line, block_iterator end)
-            : margin(margin), overflow(overflow), line(line), end(end)
+            : margin(margin), overflow(overflow), line(std::move(line)), end(std::move(end))
             {}
 
         margin_line next() const {
@@ -341,16 +343,19 @@ namespace detail
     template<typename Block>
     inline std::ostream& operator<<(std::ostream& stream, margin_line<Block> const& line) {
         auto fill = stream.fill();
-        if (!line.overflow && line.line != line.end)
-            stream << std::setfill(' ')
-                   << std::setw(line.margin->left)
+        stream << std::setfill(' ');
+        if (!line.overflow && line.line != line.end) {
+            stream << std::setw(line.margin->left)
                    << ""
                    << *line.line
                    << std::setw(line.margin->right)
-                   << ""
-                   << std::setfill(fill);
+                   << "";
+        } else {
+            stream << std::setw(line.margin->size().x)
+                   << "";
+        }
 
-        return stream;
+        return stream << std::setfill(fill);
     }
 } /* namespace detail */
 
@@ -366,11 +371,20 @@ public:
     using size_type = Size;
 
     explicit Margin(Block block)
-        : block(block)
+        : block(std::move(block))
         {}
 
-    explicit Margin(Block block, Coord left, Coord right, Coord top, Coord bottom)
-        : left(left), right(right), top(top), bottom(bottom), block(block)
+    explicit Margin(std::size_t margin, Block block)
+        : top(margin), right(margin), bottom(margin), left(margin), block(std::move(block))
+        {}
+
+    explicit Margin(std::size_t v, std::size_t h, Block block)
+        : top(v), right(h), bottom(v), left(h), block(std::move(block))
+        {}
+
+    explicit Margin(std::size_t top, std::size_t right, std::size_t bottom,
+                    std::size_t left, Block block)
+        : top(top), right(right), bottom(bottom), left(left), block(std::move(block))
         {}
 
     Size size() const {
@@ -386,17 +400,17 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { { this, -top, detail::block_traits<Block>::begin(block), detail::block_traits<Block>::end(block) } };
+        return { { this, -std::ptrdiff_t(top), detail::block_traits<Block>::begin(block), detail::block_traits<Block>::end(block) } };
     }
 
     const_iterator cend() const {
-        return { { this, bottom, detail::block_traits<Block>::end(block), detail::block_traits<Block>::end(block) } };
+        return { { this, std::ptrdiff_t(bottom), detail::block_traits<Block>::end(block), detail::block_traits<Block>::end(block) } };
     }
 
 private:
     friend std::ostream& detail::operator<< <Block>(std::ostream&, value_type const&);
 
-    Coord left = 2, right = 2, top = 1, bottom = 1;
+    std::size_t top = 1, right = 2, bottom = 1, left = 2;
     Block block;
 };
 
@@ -414,8 +428,19 @@ inline Margin<std::decay_t<Block>> margin(Block&& block) {
 }
 
 template<typename Block>
-inline Margin<std::decay_t<Block>> margin(Block&& block, Coord left, Coord right, Coord top, Coord bottom) {
-    return Margin<std::decay_t<Block>>(std::forward<Block>(block), left, right, top, bottom);
+inline Margin<std::decay_t<Block>> margin(std::size_t margin, Block&& block) {
+    return Margin<std::decay_t<Block>>(margin, std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Margin<std::decay_t<Block>> margin(std::size_t v, std::size_t h, Block&& block) {
+    return Margin<std::decay_t<Block>>(v, h, std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Margin<std::decay_t<Block>> margin(std::size_t top, std::size_t right, std::size_t bottom,
+                                          std::size_t left, Block&& block) {
+    return Margin<std::decay_t<Block>>(top, right, bottom, left, std::forward<Block>(block));
 }
 
 
@@ -441,7 +466,7 @@ namespace detail
 
         frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
                    block_iterator line, block_iterator end)
-            : frame(frame), overflow(overflow), line(line), end(end)
+            : frame(frame), overflow(overflow), line(std::move(line)), end(std::move(end))
             {}
 
         frame_line next() const {
@@ -450,7 +475,7 @@ namespace detail
         }
 
         bool equal(frame_line const& other) const {
-            return line == other.line && overflow == other.overflow && frame == other.frame;
+            return line == other.line && overflow == other.overflow;
         }
 
         Frame<Block> const* frame = nullptr;
@@ -474,27 +499,27 @@ public:
     using size_type = Size;
 
     explicit Frame(Block block, TerminalInfo term = TerminalInfo())
-        : block(block), term(term)
+        : block(std::move(block)), term(term)
         {}
 
-    explicit Frame(Block block, Border border, TerminalInfo term = TerminalInfo())
-        : border(border), block(block), term(term)
+    explicit Frame(Border border, Block block, TerminalInfo term = TerminalInfo())
+        : border(border), block(std::move(block)), term(term)
         {}
 
-    explicit Frame(Block block, string_view label, TerminalInfo term = TerminalInfo())
-        : label(label), block(block), term(term)
+    explicit Frame(string_view label, Block block, TerminalInfo term = TerminalInfo())
+        : label(label), block(std::move(block)), term(term)
         {}
 
-    explicit Frame(Block block, string_view label, Align align, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), block(block), term(term)
+    explicit Frame(string_view label, Align align, Block block, TerminalInfo term = TerminalInfo())
+        : label(label), align(align), block(std::move(block)), term(term)
         {}
 
-    explicit Frame(Block block, string_view label, Border border, TerminalInfo term = TerminalInfo())
-        : label(label), border(border), block(block), term(term)
+    explicit Frame(string_view label, Border border, Block block, TerminalInfo term = TerminalInfo())
+        : label(label), border(border), block(std::move(block)), term(term)
         {}
 
-    explicit Frame(Block block, string_view label, Align align, Border border, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), border(border), block(block), term(term)
+    explicit Frame(string_view label, Align align, Border border, Block block, TerminalInfo term = TerminalInfo())
+        : label(label), align(align), border(border), block(std::move(block)), term(term)
         {}
 
     Size size() const {
@@ -585,28 +610,439 @@ inline Frame<std::decay_t<Block>> frame(Block&& block, TerminalInfo term = Termi
 }
 
 template<typename Block>
-inline Frame<std::decay_t<Block>> frame(Block&& block, Border border, TerminalInfo term = TerminalInfo()) {
-    return Frame<std::decay_t<Block>>(std::forward<Block>(block), border, term);
+inline Frame<std::decay_t<Block>> frame(Border border, Block&& block, TerminalInfo term = TerminalInfo()) {
+    return Frame<std::decay_t<Block>>(border, std::forward<Block>(block), term);
 }
 
 template<typename Block>
-inline Frame<std::decay_t<Block>> frame(Block&& block, string_view label, TerminalInfo term = TerminalInfo()) {
-    return Frame<std::decay_t<Block>>(std::forward<Block>(block), label, term);
+inline Frame<std::decay_t<Block>> frame(string_view label, Block&& block, TerminalInfo term = TerminalInfo()) {
+    return Frame<std::decay_t<Block>>(label, std::forward<Block>(block), term);
 }
 
 template<typename Block>
-inline Frame<std::decay_t<Block>> frame(Block&& block, string_view label, Align align, TerminalInfo term = TerminalInfo()) {
-    return Frame<std::decay_t<Block>>(std::forward<Block>(block), label, align, term);
+inline Frame<std::decay_t<Block>> frame(string_view label, Align align, Block&& block, TerminalInfo term = TerminalInfo()) {
+    return Frame<std::decay_t<Block>>(label, align, std::forward<Block>(block), term);
 }
 
 template<typename Block>
-inline Frame<std::decay_t<Block>> frame(Block&& block, string_view label, Border border, TerminalInfo term = TerminalInfo()) {
-    return Frame<std::decay_t<Block>>(std::forward<Block>(block), label, border, term);
+inline Frame<std::decay_t<Block>> frame(string_view label, Border border, Block&& block, TerminalInfo term = TerminalInfo()) {
+    return Frame<std::decay_t<Block>>(label, border, std::forward<Block>(block), term);
 }
 
 template<typename Block>
-inline Frame<std::decay_t<Block>> frame(Block&& block, string_view label, Align align, Border border, TerminalInfo term = TerminalInfo()) {
-    return Frame<std::decay_t<Block>>(std::forward<Block>(block), label, align, border, term);
+inline Frame<std::decay_t<Block>> frame(string_view label, Align align, Border border, Block&& block, TerminalInfo term = TerminalInfo()) {
+    return Frame<std::decay_t<Block>>(label, align, border, std::forward<Block>(block), term);
+}
+
+
+template<typename... Blocks>
+class VBox;
+
+namespace detail
+{
+    struct plus_identity {};
+
+    template<typename Arg>
+    inline constexpr decltype(auto) operator+(plus_identity, Arg&& arg) {
+        return std::forward<Arg>(arg);
+    }
+
+    template<typename Arg>
+    inline constexpr decltype(auto) operator+(Arg&& arg, plus_identity) {
+        return std::forward<Arg>(arg);
+    }
+
+    inline constexpr plus_identity plus_fold() {
+        return {};
+    }
+
+    template<typename Arg, typename... Args>
+    inline constexpr auto plus_fold(Arg&& first, Args&&... rest) {
+        return std::forward<Arg>(first) + plus_fold(std::forward<Args>(rest)...);
+    }
+
+    inline constexpr std::size_t find_true(std::size_t index) {
+        return index;
+    }
+
+    template<typename... Args>
+    inline constexpr std::size_t find_true(std::size_t index, bool first, Args&&... rest) {
+        return first ? index : find_true(index + 1, std::forward<Args>(rest)...);
+    }
+
+    template<typename... Args>
+    inline constexpr std::size_t find_true(bool first, Args&&... rest) {
+        return first ? 0 : find_true(std::size_t(1), std::forward<Args>(rest)...);
+    }
+
+    template<typename... Blocks>
+    class vbox_line;
+
+    template<typename... Blocks>
+    std::ostream& operator<<(std::ostream&, vbox_line<Blocks...> const&);
+
+    template<typename... Blocks>
+    class vbox_line
+    {
+        using block_iterators = std::tuple<typename detail::block_traits<Blocks>::iterator...>;
+
+        friend class detail::block_iterator<VBox<Blocks...>, vbox_line>;
+        friend class VBox<Blocks...>;
+
+        friend std::ostream& operator<< <Blocks...>(std::ostream&, vbox_line const&);
+
+        vbox_line(VBox<Blocks...> const* vbox, std::size_t margin,
+                  block_iterators lines, block_iterators ends)
+            : vbox(vbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+            {}
+
+        vbox_line next() const {
+            return margin ? vbox_line(vbox, margin - 1, lines, ends)
+                          : next_impl(std::make_index_sequence<sizeof...(Blocks)>());
+        }
+
+        bool equal(vbox_line const& other) const {
+            return lines == other.lines && margin == other.margin;
+        }
+
+        template<std::size_t... N>
+        vbox_line next_impl(std::index_sequence<N...> indices) const {
+            auto current = current_index(indices);
+            block_iterators next(((N != current) ? std::get<N>(lines) : std::next(std::get<N>(lines)))...);
+            return {
+                vbox,
+                (find_true((std::get<N>(next) != std::get<N>(ends))...) != current) ? vbox->margin : 0,
+                next,
+                ends
+            };
+        }
+
+        template<std::size_t... N>
+        std::size_t current_index(std::index_sequence<N...>) const {
+            return find_true((std::get<N>(lines) != std::get<N>(ends))...);
+        }
+
+        VBox<Blocks...> const* vbox;
+        std::size_t margin = 0;
+        block_iterators lines, ends;
+
+    public:
+        vbox_line() = default;
+    };
+
+    inline std::ostream& output_vbox_line(std::ostream& stream, std::size_t) {
+        return stream;
+    }
+
+    template<typename Arg, typename... Args>
+    inline std::ostream& output_vbox_line(std::ostream& stream, std::size_t width, Arg&& first, Args&&... rest) {
+        return (std::get<0>(std::forward<Arg>(first)) != std::get<1>(std::forward<Arg>(first)))
+            ? (stream << *std::get<0>(std::forward<Arg>(first))
+                      << std::setw(width - detail::block_traits<std::decay_t<std::tuple_element_t<2, std::decay_t<Arg>>>>
+                          ::size(std::get<2>(std::forward<Arg>(first))).x) << "")
+            : output_vbox_line(stream, width, std::forward<Args>(rest)...);
+    }
+
+    template<typename Iterators, typename Blocks, std::size_t... N>
+    inline std::ostream& output_vbox_line(std::ostream& stream,
+                                          std::size_t width,
+                                          Iterators const& lines,
+                                          Iterators const& ends,
+                                          Blocks const& blocks,
+                                          std::index_sequence<N...>) {
+        return output_vbox_line(
+            stream, width, std::forward_as_tuple(std::get<N>(lines), std::get<N>(ends), std::get<N>(blocks))...);
+    }
+
+    template<typename... Blocks>
+    inline std::ostream& operator<<(std::ostream& stream, vbox_line<Blocks...> const& line) {
+        auto fill = stream.fill();
+        auto width = line.vbox->size().x;
+
+        stream << std::setfill(' ');
+
+        if (!line.margin)
+            output_vbox_line(stream, width, line.lines, line.ends, line.vbox->blocks,
+                             std::make_index_sequence<sizeof...(Blocks)>());
+        else
+            stream << std::setw(width) << "";
+
+        return stream << std::setfill(fill);
+    }
+} /* namespace detail */
+
+template<typename... Blocks>
+class VBox
+{
+public:
+    using value_type = detail::vbox_line<Blocks...>;
+    using reference = value_type const&;
+    using const_reference = value_type const&;
+    using const_iterator = detail::block_iterator<VBox<Blocks...>, value_type>;
+    using iterator = const_iterator;
+    using difference_type = typename const_iterator::difference_type;
+    using size_type = Size;
+
+    explicit VBox(Blocks... blocks)
+        : blocks(std::move(blocks)...)
+        {}
+
+    explicit VBox(std::size_t margin, Blocks... blocks)
+        : margin(margin), blocks(std::move(blocks)...)
+        {}
+
+    Size size() const {
+        return size_impl(std::make_index_sequence<sizeof...(Blocks)>()) +
+            Size(0, margin*(sizeof...(Blocks) - 1));
+    }
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const {
+        return { { this, 0, begins(std::make_index_sequence<sizeof...(Blocks)>()),
+                   ends(std::make_index_sequence<sizeof...(Blocks)>()) } };
+    }
+
+    const_iterator cend() const {
+        auto e = ends(std::make_index_sequence<sizeof...(Blocks)>());
+        return { { this, margin, e, e } };
+    }
+
+private:
+    friend value_type;
+
+    friend std::ostream& detail::operator<< <Blocks...>(std::ostream&, value_type const&);
+
+    template<std::size_t... N>
+    Size size_impl(std::index_sequence<N...>) const {
+        return {
+            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::size(std::get<N>(blocks)).x... }),
+            detail::plus_fold(
+                detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                    ::size(std::get<N>(blocks)).y...)
+        };
+    }
+
+    template<std::size_t... N>
+    typename value_type::block_iterators begins(std::index_sequence<N...>) const {
+        return {
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::begin(std::get<N>(blocks))...
+        };
+    }
+
+    template<std::size_t... N>
+    typename value_type::block_iterators ends(std::index_sequence<N...>) const {
+        return {
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::end(std::get<N>(blocks))...
+        };
+    }
+
+    std::size_t margin = 1;
+    std::tuple<Blocks...> blocks;
+};
+
+template<typename Block, typename... Blocks>
+inline std::enable_if_t<!std::is_convertible<std::decay_t<Block>, std::size_t>::value,
+                        VBox<std::decay_t<Block>, std::decay_t<Blocks>...>>
+vbox(Block&& block, Blocks&&... blocks) {
+    return VBox<std::decay_t<Block>, std::decay_t<Blocks>...>(std::forward<Block>(block), std::forward<Blocks>(blocks)...);
+}
+
+template<typename Margin, typename... Blocks>
+inline std::enable_if_t<std::is_convertible<std::decay_t<Margin>, std::size_t>::value,
+                        VBox<std::decay_t<Blocks>...>>
+vbox(Margin&& margin, Blocks&&... blocks) {
+    return VBox<std::decay_t<Blocks>...>(std::forward<Margin>(margin), std::forward<Blocks>(blocks)...);
+}
+
+
+template<typename... Blocks>
+class HBox;
+
+namespace detail
+{
+    template<typename... Blocks>
+    class hbox_line;
+
+    template<typename... Blocks>
+    std::ostream& operator<<(std::ostream&, hbox_line<Blocks...> const&);
+
+    template<typename... Blocks>
+    class hbox_line
+    {
+        using block_iterators = std::tuple<typename detail::block_traits<Blocks>::iterator...>;
+
+        friend class detail::block_iterator<HBox<Blocks...>, hbox_line>;
+        friend class HBox<Blocks...>;
+
+        friend std::ostream& operator<< <Blocks...>(std::ostream&, hbox_line const&);
+
+        hbox_line(HBox<Blocks...> const* hbox, std::size_t margin, block_iterators lines, block_iterators ends)
+            : hbox(hbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+            {}
+
+        hbox_line next() const {
+            return next_impl(std::make_index_sequence<sizeof...(Blocks)>());
+        }
+
+        bool equal(hbox_line const& other) const {
+            return lines == other.lines;
+        }
+
+        template<std::size_t... N>
+        hbox_line next_impl(std::index_sequence<N...>) const {
+            return {
+                hbox,
+                margin,
+                { ((std::get<N>(lines) != std::get<N>(ends)) ? std::next(std::get<N>(lines)) : std::get<N>(lines))... },
+                ends
+            };
+        }
+
+        HBox<Blocks...> const* hbox;
+        std::size_t margin = 0;
+        block_iterators lines, ends;
+
+    public:
+        hbox_line() = default;
+    };
+
+    inline std::ostream& output_hbox_line(std::ostream& stream, std::size_t) {
+        return stream;
+    }
+
+    template<typename Arg, typename... Args>
+    inline std::ostream& output_hbox_line(std::ostream& stream, std::size_t margin,
+                                          Arg&& first, Args&&... rest) {
+        return output_hbox_line(
+            ((std::get<0>(std::forward<Arg>(first)) != std::get<1>(std::forward<Arg>(first)))
+                ? stream << std::setw(margin) << "" << *std::get<0>(std::forward<Arg>(first))
+                : stream << std::setw(margin + detail::block_traits<std::decay_t<std::tuple_element_t<2, std::decay_t<Arg>>>>
+                    ::size(std::get<2>(std::forward<Arg>(first))).x) << ""),
+            margin, std::forward<Args>(rest)...);
+    }
+
+    template<typename Iterators, typename Blocks, std::size_t... N>
+    inline std::ostream& output_hbox_line(std::ostream& stream,
+                                          std::size_t margin,
+                                          Iterators const& lines,
+                                          Iterators const& ends,
+                                          Blocks const& blocks,
+                                          std::index_sequence<N...>) {
+        return output_hbox_line(
+            ((std::get<0>(lines) != std::get<0>(ends))
+                ? stream << *std::get<0>(lines)
+                : stream << std::setw(detail::block_traits<std::decay_t<std::tuple_element_t<0, Blocks>>>
+                    ::size(std::get<0>(blocks)).x) << ""),
+            margin, std::forward_as_tuple(std::get<N+1>(lines), std::get<N+1>(ends), std::get<N+1>(blocks))...);
+    }
+
+    template<typename... Blocks>
+    inline std::ostream& operator<<(std::ostream& stream, hbox_line<Blocks...> const& line) {
+        auto fill = stream.fill();
+        return output_hbox_line(stream << std::setfill(' '), line.margin, line.lines, line.ends, line.hbox->blocks,
+                                std::make_index_sequence<sizeof...(Blocks) - 1>()) << std::setfill(fill);
+    }
+} /* namespace detail */
+
+template<typename... Blocks>
+class HBox
+{
+public:
+    using value_type = detail::hbox_line<Blocks...>;
+    using reference = value_type const&;
+    using const_reference = value_type const&;
+    using const_iterator = detail::block_iterator<HBox<Blocks...>, value_type>;
+    using iterator = const_iterator;
+    using difference_type = typename const_iterator::difference_type;
+    using size_type = Size;
+
+    explicit HBox(Blocks... blocks)
+        : blocks(std::move(blocks)...)
+        {}
+
+    explicit HBox(std::size_t margin, Blocks... blocks)
+        : margin(margin), blocks(std::move(blocks)...)
+        {}
+
+    Size size() const {
+        return size_impl(std::make_index_sequence<sizeof...(Blocks)>()) +
+            Size(margin*(sizeof...(Blocks) - 1), 0);
+    }
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const {
+        return { { this, margin, begins(std::make_index_sequence<sizeof...(Blocks)>()),
+                   ends(std::make_index_sequence<sizeof...(Blocks)>()) } };
+    }
+
+    const_iterator cend() const {
+        auto e = ends(std::make_index_sequence<sizeof...(Blocks)>());
+        return { { this, margin, e, e } };
+    }
+
+private:
+    friend std::ostream& detail::operator<< <Blocks...>(std::ostream&, value_type const&);
+
+    template<std::size_t... N>
+    Size size_impl(std::index_sequence<N...>) const {
+        return {
+            detail::plus_fold(
+                detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                    ::size(std::get<N>(blocks)).x...),
+            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::size(std::get<N>(blocks)).y... }),
+        };
+    }
+
+    template<std::size_t... N>
+    typename value_type::block_iterators begins(std::index_sequence<N...>) const {
+        return {
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::begin(std::get<N>(blocks))...
+        };
+    }
+
+    template<std::size_t... N>
+    typename value_type::block_iterators ends(std::index_sequence<N...>) const {
+        return {
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
+                ::end(std::get<N>(blocks))...
+        };
+    }
+
+    std::size_t margin = 2;
+    std::tuple<Blocks...> blocks;
+};
+
+template<typename Block, typename... Blocks>
+inline std::enable_if_t<!std::is_convertible<std::decay_t<Block>, std::size_t>::value,
+                        HBox<std::decay_t<Block>, std::decay_t<Blocks>...>>
+hbox(Block&& block, Blocks&&... blocks) {
+    return HBox<std::decay_t<Block>, std::decay_t<Blocks>...>(std::forward<Block>(block), std::forward<Blocks>(blocks)...);
+}
+
+template<typename Margin, typename... Blocks>
+inline std::enable_if_t<std::is_convertible<std::decay_t<Margin>, std::size_t>::value,
+                        HBox<std::decay_t<Blocks>...>>
+hbox(Margin&& margin, Blocks&&... blocks) {
+    return HBox<std::decay_t<Blocks>...>(std::forward<Margin>(margin), std::forward<Blocks>(blocks)...);
 }
 
 } /* namespace plot */

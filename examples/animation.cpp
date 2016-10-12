@@ -1,4 +1,5 @@
 #include "../braille.hpp"
+#include "../layout.hpp"
 
 #include <cmath>
 #include <chrono>
