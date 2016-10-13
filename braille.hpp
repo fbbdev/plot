@@ -206,7 +206,10 @@ public:
     using const_iterator = detail::block_iterator<BrailleCanvas, value_type>;
     using iterator = const_iterator;
     using difference_type = const_iterator::difference_type;
+
+    using point_type = Point;
     using size_type = Size;
+    using rect_type = Rect;
 
     BrailleCanvas() = default;
 
@@ -494,11 +497,11 @@ public:
               .pop(op);
     }
 
-    BrailleCanvas& ellipse(Color const& stroke, Point const& center, Point const& semiaxes, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& ellipse(Color const& stroke, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
         return ellipse(stroke, { center - semiaxes, center + semiaxes }, op);
     }
 
-    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Point const& center, Point const& semiaxes, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
         return ellipse(stroke, fill, { center - semiaxes, center + semiaxes }, op);
     }
 
