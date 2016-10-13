@@ -51,6 +51,11 @@ struct GenericPoint {
         };
     }
 
+    template<typename U>
+    constexpr operator GenericPoint<U>() const {
+        return { static_cast<U>(x), static_cast<U>(y) };
+    }
+
     GenericPoint& operator+=(GenericPoint const& other) {
         return (*this) = (*this) + other;
     }
@@ -73,11 +78,6 @@ struct GenericPoint {
 
     constexpr bool operator!=(GenericPoint const& other) const {
         return x != other.x || y != other.y;
-    }
-
-    template<typename U>
-    constexpr operator GenericPoint<U>() const {
-        return { static_cast<U>(x), static_cast<U>(y) };
     }
 
     T x = 0, y = 0;
