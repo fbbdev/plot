@@ -494,6 +494,14 @@ public:
               .pop(op);
     }
 
+    BrailleCanvas& ellipse(Color const& stroke, Point const& center, Point const& semiaxes, TerminalOp op = TerminalOp::Over) {
+        return ellipse(stroke, { center - semiaxes, center + semiaxes }, op);
+    }
+
+    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Point const& center, Point const& semiaxes, TerminalOp op = TerminalOp::Over) {
+        return ellipse(stroke, fill, { center - semiaxes, center + semiaxes }, op);
+    }
+
 private:
     friend value_type;
     template<typename>
