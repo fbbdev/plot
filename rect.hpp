@@ -35,12 +35,30 @@ struct Rect
         };
     }
 
+    constexpr Rect sorted_x() const {
+        return (p1.x > p2.x) ? Rect(p2, p1) : *this;
+    }
+
+    constexpr Rect sorted_y() const {
+        return (p1.y > p2.y) ? Rect(p2, p1) : *this;
+    }
+
     constexpr Point size() const {
         return { utils::abs(p2.x - p1.x), utils::abs(p2.y - p1.y) };
     }
 
+    // XXX: Calling on unsorted rectangles is undefined behavior
     constexpr bool contains(Point p) const {
         return p.x >= p1.x && p.x < p2.x && p.y >= p1.y && p.y < p2.y;
+    }
+
+    // XXX: Calling on unsorted rectangles is undefined behavior
+    constexpr bool contains(Rect const& r) const {
+        return r.p1.x >= p1.x && r.p2.x <= p2.x && r.p1.y >= p1.y && r.p2.y <= p2.y;
+    }
+
+    constexpr Rect clamp(Rect const& r) const {
+        return { p1.clamp(r.p1, r.p2), p2.clamp(r.p1, r.p2) };
     }
 
     Rect& operator+=(Point const& other) {
