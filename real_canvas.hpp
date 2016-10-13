@@ -152,7 +152,7 @@ public:
     }
 
     typename Canvas::point_type map(Pointf const& p) const {
-        auto canvas_bounds = canvas_.size() - Point(1, 1);
+        auto canvas_bounds = canvas_.size();
         return {
             std::lround((p.x - bounds_.p1.x)/(bounds_.p2.x - bounds_.p1.x) * canvas_bounds.x),
             std::lround((p.y - bounds_.p1.y)/(bounds_.p2.y - bounds_.p1.y) * canvas_bounds.y)
@@ -165,7 +165,7 @@ public:
 
     typename Canvas::size_type map_size(Sizef const& s) const {
         auto size = this->size();
-        auto canvas_bounds = canvas_.size() - Point(1, 1);
+        auto canvas_bounds = canvas_.size();
         return {
             std::lround(s.x/size.x * canvas_bounds.x),
             std::lround(s.y/size.y * canvas_bounds.y)
@@ -173,7 +173,7 @@ public:
     }
 
     Pointf unmap(typename Canvas::point_type const& p) const {
-        auto canvas_bounds = canvas_.size() - Point(1, 1);
+        auto canvas_bounds = canvas_.size();
         return {
             (float(p.x)/canvas_bounds.x)*(bounds_.p2.x - bounds_.p1.x) + bounds_.p1.x,
             (float(p.y)/canvas_bounds.y)*(bounds_.p2.y - bounds_.p1.y) + bounds_.p1.y
@@ -186,7 +186,7 @@ public:
 
     Sizef unmap_size(typename Canvas::size_type const& s) const {
         auto size = this->size();
-        auto canvas_bounds = canvas_.size() - Point(1, 1);
+        auto canvas_bounds = canvas_.size();
         return {
             float(s.x)/canvas_bounds.x * size.x,
             float(s.y)/canvas_bounds.y * size.y

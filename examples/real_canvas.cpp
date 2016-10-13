@@ -7,7 +7,7 @@
 using namespace plot;
 
 int main() {
-    RealCanvas<BrailleCanvas> canvas({ { 0.0f, 0.0f }, { 1.0f, 0.57f } }, Size{ 70, 20 }, TerminalInfo().detect());
+    RealCanvas<BrailleCanvas> canvas({ { 0.0f, 0.0f }, { 1.0f, 0.57f } }, Size(70, 20), TerminalInfo().detect());
 
     canvas.rect({ 1.0f, 0.35f, 0.0f }, { 0.0f, 0.2f, 1.0f }, { { 0.079f, 0.079f }, { 0.288f, 0.288f } })
           .push()
