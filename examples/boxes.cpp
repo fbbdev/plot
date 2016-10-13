@@ -86,7 +86,13 @@ int main() {
               .line({ 1.0f, 0.8f, 0.2f }, { circle_center.x, pos.y }, pos)
               .line({ 0.4f, 1.0f, 0.4f }, { pos.x, circle_center.y }, pos)
               .line(term.foreground_color, circle_center, pos)
-              .ellipse(term.foreground_color, term.foreground_color, { pos - Point(1, 1), pos + Point(1, 1) })
+              .push()
+                  .dot(term.foreground_color, pos)
+                  .dot(term.foreground_color, pos - Point(1, 0))
+                  .dot(term.foreground_color, pos + Point(1, 0))
+                  .dot(term.foreground_color, pos - Point(0, 1))
+                  .dot(term.foreground_color, pos + Point(0, 1))
+              .pop()
               .push();
 
         auto track_length = N/Coord(2*f)/2;

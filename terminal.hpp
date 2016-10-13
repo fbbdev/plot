@@ -66,7 +66,7 @@ namespace ansi
         };
 
         inline ansi_palette_entry find_palette_entry(plot::Color c) {
-            return *std::min_element(palette, palette + 16, [c](auto const& e1, auto const& e2) {
+            return *std::min_element(std::begin(palette), std::end(palette), [c](auto const& e1, auto const& e2) {
                 return e1.first.distance(c) < e2.first.distance(c);
             });
         }
