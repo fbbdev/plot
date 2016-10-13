@@ -1,4 +1,5 @@
 #include "../braille.hpp"
+#include "../real_canvas.hpp"
 #include "../layout.hpp"
 
 #include <cmath>
@@ -22,18 +23,18 @@ int main() {
 
     BrailleCanvas waves({ 30, 7 }, term);
     BrailleCanvas mul_waves(waves.char_size(), term);
-    BrailleCanvas circle({ 2*(waves.char_size().y + mul_waves.char_size().y + 3),
-                           waves.char_size().y + mul_waves.char_size().y + 3 }, term);
+    RealCanvas<BrailleCanvas> circle(
+        { { -1.2f, 1.2f }, { 1.2f, -1.2f } },
+        Size(2*(waves.char_size().y + mul_waves.char_size().y + 3),
+             waves.char_size().y + mul_waves.char_size().y + 3),
+        term);
 
-    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle)));
+    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle.canvas())));
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
 
-    Rect circle_rect({ 0, 0 }, circle.size() - Point(2, 2));
-    auto circle_size = circle_rect.size() + Point(1, 1);
-    Point circle_center(circle_size.x/2, circle_size.y/2);
-    auto circle_radius = circle_center - Point(4, 4);
+    auto circle_bounds = circle.bounds();
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2;
@@ -76,33 +77,27 @@ int main() {
                  .stroke({ 1.0f, 0.8f, 0.2f }, rect, stroke_fn(sincos, t))
                  .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
-        Point pos(
-            circle_center.x + std::lround(circle_radius.x*sincos(t, N)),
-            circle_center.y - std::lround(circle_radius.y*sin2(t, N)));
+        Pointf pos(sincos(t, N), sin2(t, N));
 
         circle.clear()
-              .line(term.foreground_color, { circle_center.x, 0 }, { circle_center.x, circle_rect.p2.y })
-              .line(term.foreground_color, { 0, circle_center.y }, { circle_rect.p2.x, circle_center.y })
-              .line({ 1.0f, 0.8f, 0.2f }, { circle_center.x, pos.y }, pos)
-              .line({ 0.4f, 1.0f, 0.4f }, { pos.x, circle_center.y }, pos)
-              .line(term.foreground_color, circle_center, pos)
+              .line(term.foreground_color, { circle_bounds.p1.x, 0 }, { circle_bounds.p2.x, 0 })
+              .line(term.foreground_color, { 0, circle_bounds.p1.y }, { 0, circle_bounds.p2.y })
+              .line({ 1.0f, 0.8f, 0.2f }, { 0, pos.y }, pos)
+              .line({ 0.4f, 1.0f, 0.4f }, { pos.x, 0 }, pos)
+              .line(term.foreground_color, { 0, 0 }, pos)
               .push()
                   .dot(term.foreground_color, pos)
-                  .dot(term.foreground_color, pos - Point(1, 0))
-                  .dot(term.foreground_color, pos + Point(1, 0))
-                  .dot(term.foreground_color, pos - Point(0, 1))
-                  .dot(term.foreground_color, pos + Point(0, 1))
+                  .dot(term.foreground_color, pos - circle.unmap_size({ 1, 0 }))
+                  .dot(term.foreground_color, pos + circle.unmap_size({ 1, 0 }))
+                  .dot(term.foreground_color, pos - circle.unmap_size({ 0, 1 }))
+                  .dot(term.foreground_color, pos + circle.unmap_size({ 0, 1 }))
               .pop()
               .push();
 
         auto track_length = N/Coord(2*f)/2;
         for (Coord x = 0; x < track_length; ++x) {
-            Point pos(
-                circle_center.x + std::lround(circle_radius.x*sincos(t, N - x)),
-                circle_center.y - std::lround(circle_radius.y*sin2(t, N - x)));
-            Point prev(
-                circle_center.x + std::lround(circle_radius.x*sincos(t, N - x - 1)),
-                circle_center.y - std::lround(circle_radius.y*sin2(t, N - x - 1)));
+            Pointf pos(sincos(t, N - x), sin2(t, N - x));
+            Pointf prev(sincos(t, N - x - 1), sin2(t, N - x - 1));
             circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), pos, prev);
         }
 

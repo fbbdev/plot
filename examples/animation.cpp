@@ -2,6 +2,7 @@
 #include "../layout.hpp"
 
 #include <cmath>
+#include <csignal>
 #include <chrono>
 #include <iostream>
 #include <string>
@@ -9,7 +10,13 @@
 
 using namespace plot;
 
+static volatile std::sig_atomic_t run = true;
+
 int main() {
+    std::signal(SIGINT, [](int) {
+        run = false;
+    });
+
     TerminalInfo term;
     term.detect();
 
@@ -51,8 +58,14 @@ int main() {
 
         std::cout << std::flush;
 
+        if (!run)
+            break;
+
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(40ms);
+
+        if (!run)
+            break;
 
         t += 0.01f;
         if (t >= 1.0f)
