@@ -25,6 +25,7 @@
 #pragma once
 
 #include "color.hpp"
+#include "layout.hpp"
 #include "point.hpp"
 #include "rect.hpp"
 #include "utils.hpp"
@@ -247,5 +248,27 @@ template<typename Canvas>
 inline std::ostream& operator<<(std::ostream& stream, RealCanvas<Canvas> const& canvas) {
     return stream << canvas.canvas();
 }
+
+namespace detail
+{
+    // Make RealCanvas a valid block
+    template<typename Canvas, bool IsCanvas>
+    struct block_ref_traits<plot::RealCanvas<Canvas>, IsCanvas>
+    {
+        using iterator = typename Canvas::const_iterator;
+
+        static Size size(plot::RealCanvas<Canvas> const& block) {
+            return block.canvas().char_size();
+        }
+
+        static iterator begin(plot::RealCanvas<Canvas> const& block) {
+            return block.canvas().begin();
+        }
+
+        static iterator end(plot::RealCanvas<Canvas> const& block) {
+            return block.canvas().end();
+        }
+    };
+} /* namespace detail */
 
 } /* namespace plot */

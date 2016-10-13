@@ -53,7 +53,7 @@ int main() {
              waves.char_size().y + mul_waves.char_size().y + 3),
         term);
 
-    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle.canvas())));
+    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle)));
 
     Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
     auto size = rect.size() + Point(1, 1);
