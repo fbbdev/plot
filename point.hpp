@@ -7,108 +7,140 @@
 namespace plot
 {
 
-using Coord = std::ptrdiff_t;
+template<typename T>
+struct GenericPoint;
 
-struct Point;
+template<typename T>
+constexpr GenericPoint<T> operator+(GenericPoint<T> const& lhs, GenericPoint<T> const& rhs);
 
-constexpr Point operator+(Point const& lhs, Point const& rhs);
-constexpr Point operator-(Point const& lhs, Point const& rhs);
-constexpr Point operator*(Point const& lhs, Coord const& rhs);
-constexpr Point operator*(Coord const& lhs, Point const& rhs);
-constexpr Point operator/(Point const& lhs, Coord const& rhs);
-constexpr Point operator/(Coord const& lhs, Point const& rhs);
+template<typename T>
+constexpr GenericPoint<T> operator-(GenericPoint<T> const& lhs, GenericPoint<T> const& rhs);
 
-struct Point {
-    constexpr Point() = default;
+template<typename T>
+constexpr GenericPoint<T> operator*(GenericPoint<T> const& lhs, T const& rhs);
 
-    constexpr Point(Coord x, Coord y)
+template<typename T>
+constexpr GenericPoint<T> operator*(T const& lhs, GenericPoint<T> const& rhs);
+
+template<typename T>
+constexpr GenericPoint<T> operator/(GenericPoint<T> const& lhs, T const& rhs);
+
+template<typename T>
+constexpr GenericPoint<T> operator/(T const& lhs, GenericPoint<T> const& rhs);
+
+template<typename T>
+struct GenericPoint {
+    constexpr GenericPoint() = default;
+
+    constexpr GenericPoint(T x, T y)
         : x(x), y(y)
         {}
 
-    constexpr Coord distance(Point const& other) const {
+    constexpr T distance(GenericPoint const& other) const {
         return (other - *this).abs();
     }
 
-    constexpr Coord abs() const {
+    constexpr T abs() const {
         return std::sqrt(x*x + y*y);
     }
 
-    constexpr Point clamp(Point const& min, Point const& max) const {
+    constexpr GenericPoint clamp(GenericPoint const& min, GenericPoint const& max) const {
         return {
             utils::clamp(x, min.x, max.x),
             utils::clamp(y, min.y, max.y)
         };
     }
 
-    Point& operator+=(Point const& other) {
+    GenericPoint& operator+=(GenericPoint const& other) {
         return (*this) = (*this) + other;
     }
 
-    Point& operator-=(Point const& other) {
+    GenericPoint& operator-=(GenericPoint const& other) {
         return (*this) = (*this) - other;
     }
 
-    Point& operator*=(Coord n) {
+    GenericPoint& operator*=(T n) {
         return (*this) = (*this) * n;
     }
 
-    Point& operator/=(Coord n) {
+    GenericPoint& operator/=(T n) {
         return (*this) = (*this) / n;
     }
 
-    constexpr bool operator==(Point const& other) const {
+    constexpr bool operator==(GenericPoint const& other) const {
         return x == other.x && y == other.y;
     }
 
-    constexpr bool operator!=(Point const& other) const {
+    constexpr bool operator!=(GenericPoint const& other) const {
         return x != other.x || y != other.y;
     }
 
-    Coord x = 0, y = 0;
+    template<typename U>
+    constexpr operator GenericPoint<U>() const {
+        return { static_cast<U>(x), static_cast<U>(y) };
+    }
+
+    T x = 0, y = 0;
 };
 
-inline constexpr Point operator+(Point const& lhs, Point const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator+(GenericPoint<T> const& lhs, GenericPoint<T> const& rhs) {
     return {
         lhs.x + rhs.x,
         lhs.y + rhs.y
     };
 }
 
-inline constexpr Point operator-(Point const& lhs, Point const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator-(GenericPoint<T> const& lhs, GenericPoint<T> const& rhs) {
     return {
         lhs.x - rhs.x,
         lhs.y - rhs.y
     };
 }
 
-inline constexpr Point operator*(Point const& lhs, Coord const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator*(GenericPoint<T> const& lhs, T const& rhs) {
     return {
         lhs.x*rhs,
         lhs.y*rhs
     };
 }
 
-inline constexpr Point operator*(Coord const& lhs, Point const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator*(T const& lhs, GenericPoint<T> const& rhs) {
     return {
         lhs*rhs.x,
         lhs*rhs.y
     };
 }
 
-inline constexpr Point operator/(Point const& lhs, Coord const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator/(GenericPoint<T> const& lhs, T const& rhs) {
     return {
         lhs.x/rhs,
         lhs.y/rhs
     };
 }
 
-inline constexpr Point operator/(Coord const& lhs, Point const& rhs) {
+template<typename T>
+inline constexpr GenericPoint<T> operator/(T const& lhs, GenericPoint<T> const& rhs) {
     return {
         lhs/rhs.x,
         lhs/rhs.y
     };
 }
 
-using Size = Point;
+using Coord = std::ptrdiff_t;
+using Coordf = float;
+
+using Point = GenericPoint<Coord>;
+using Pointf = GenericPoint<Coordf>;
+
+template<typename T>
+using GenericSize = GenericPoint<T>;
+
+using Size = GenericSize<Coord>;
+using Sizef = GenericSize<Coordf>;
 
 } /* namespace plot */
