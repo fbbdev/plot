@@ -105,7 +105,7 @@ namespace detail
 
     private:
         template<typename, bool>
-        friend struct block_traits;
+        friend struct normal_block_ref_traits;
 
         single_line_adapter(pointer block, bool end = false)
             : block(block), end(end)
