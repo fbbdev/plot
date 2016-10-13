@@ -9,7 +9,12 @@ int main() {
     BrailleCanvas canvas({ 70, 20 }, TerminalInfo().detect());
 
     canvas.rect({ 1.0f, 0.35f, 0.0f }, { 0.0f, 0.2f, 1.0f }, { { 11, 11 }, { 40, 40 } })
-          .line({ 0.4f,  1.0f, 0.4f }, { 12, 12 }, { 39, 39 }, TerminalOp::ClipDst)
+          .push()
+              .line({ 0.4f,  1.0f, 0.4f }, { 12, 17 }, { 17, 39 })
+              .line({ 0.4f,  1.0f, 0.4f }, { 17, 39 }, { 39, 34 })
+              .line({ 0.4f,  1.0f, 0.4f }, { 39, 34 }, { 34, 12 })
+              .line({ 0.4f,  1.0f, 0.4f }, { 34, 12 }, { 12, 17 })
+          .pop(TerminalOp::ClipDst)
           .ellipse({ 0.6f, 0.6f, 0.6f }, Rect({ 30, 30 }) + Point(45, 11))
           .ellipse({ 0, 0, 0 }, { 1.0f, 1.0f, 1.0f }, Rect({ 20, 20 }) + Point(50, 16))
           .stroke({ 0.2f, 0.2f, 1.0f }, { { 12, 42 }, { 71, 67 } }, [](Coord x) {

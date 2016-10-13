@@ -338,13 +338,16 @@ public:
     }
 
     BrailleCanvas& line(Color const& color, Point from, Point to, TerminalOp op = TerminalOp::Over) {
-        auto dx = to.x - from.x,
-             dy = to.y - from.y;
+        auto sorted = Rect(from, to).sorted_x();
+        auto dx = (sorted.p2.x - sorted.p1.x) + 1,
+             dy = sorted.p2.y - sorted.p1.y;
 
-        dx += (dx >= 0) - (dx < 0);
         dy += (dy >= 0) - (dy < 0);
 
-        return stroke(color, { from, to }, [dx, dy, x0 = from.x, y0 = from.y](Coord x) {
+        auto gcd = utils::gcd(dx, dy);
+        dx /= gcd; dy /= gcd;
+
+        return stroke(color, sorted, [dx, dy, x0 = sorted.p1.x, y0 = sorted.p1.y](Coord x) {
             auto base = (x - x0)*dy/dx + y0,
                  end = (1 + x - x0)*dy/dx + y0;
             return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
@@ -522,9 +525,9 @@ private:
 
 template<typename Fn>
 BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
-    auto size = this->size();
-    rect = Rect(rect.p1.clamp({}, size), rect.p2.clamp({}, size)).sorted();
+    rect = rect.sorted();
     rect.p2 += Point(1, 1);
+    rect = rect.clamp(size());
     Rect block_rect{
         { rect.p1.x/2, rect.p1.y/4 },
         { utils::max(1l, rect.p2.x/2 + (rect.p2.x%2)),
@@ -565,6 +568,7 @@ template<typename Fn>
 BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
     rect = rect.sorted();
     rect.p2 += Point(1, 1);
+    rect = rect.clamp(size());
     Rect block_rect{
         { rect.p1.x/2, rect.p1.y/4 },
         { utils::max(1l, rect.p2.x/2 + (rect.p2.x%2)),
