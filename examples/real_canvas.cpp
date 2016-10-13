@@ -40,17 +40,15 @@ int main() {
               .line({ 0.4f,  1.0f, 0.4f }, { 0.281f, 0.245f }, { 0.245f, 0.086f })
               .line({ 0.4f,  1.0f, 0.4f }, { 0.245f, 0.086f }, { 0.086f, 0.122f })
           .pop(TerminalOp::ClipDst)
-          .ellipse({ 0.6f, 0.6f, 0.6f }, Rectf({ 0.216f, 0.216f }) + Pointf(0.324f, 0.079f))
-          .ellipse({ 0, 0, 0 }, { 1.0f, 1.0f, 1.0f }, Rectf({ 0.144f, 0.144f }) + Pointf(0.3597f, 0.115f))
-          .canvas().stroke({ 0.2f, 0.2f, 1.0f }, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
-              Coord base = 55 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f))),
-                    end  = 55 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
-              return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+          .ellipse({ 0.6f, 0.6f, 0.6f }, Rectf({ 0.214f, 0.214f }) + Pointf(0.321f, 0.079f))
+          .ellipse({ 0, 0, 0 }, { 1.0f, 1.0f, 1.0f }, { 0.432f, 0.186f }, { 0.072f, 0.072f })
+          .stroke({ 0.2f, 0.2f, 1.0f }, { { 0.086f, 0.3f }, { 0.507f, 0.479f } }, [](Coordf x0, Coordf x1) {
+              return std::make_pair(0.393f - 0.072f*std::sin(2*3.141592f*((x0 - 0.086f)/0.211f)),
+                                    0.393f - 0.072f*std::sin(2*3.141592f*((x1 - 0.086f)/0.211f)));
           })
-          .stroke({ 1.0f, 0.4f, 0.4f }, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
-              Coord base = 55 - std::lround(10*std::cos(2*3.141592f*((x - 12)/30.0f))),
-                    end  = 55 - std::lround(10*std::cos(2*3.141592f*((x - 11)/30.0f)));
-              return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+          .stroke({ 1.0f, 0.4f, 0.4f }, { { 0.086f, 0.3f }, { 0.507f, 0.479f } }, [](Coordf x0, Coordf x1) {
+              return std::make_pair(0.393f - 0.072f*std::cos(2*3.141592f*((x0 - 0.086f)/0.211f)),
+                                    0.393f - 0.072f*std::cos(2*3.141592f*((x1 - 0.086f)/0.211f)));
           }, TerminalOp::ClipSrc);
 
     std::cout << canvas << std::endl;

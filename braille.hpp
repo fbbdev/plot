@@ -231,6 +231,7 @@ public:
     using iterator = const_iterator;
     using difference_type = const_iterator::difference_type;
 
+    using coord_type = Coord;
     using point_type = Point;
     using size_type = Size;
     using rect_type = Rect;

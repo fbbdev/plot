@@ -39,6 +39,7 @@ template<typename Canvas>
 class RealCanvas
 {
 public:
+    using coord_type = Coordf;
     using point_type = Pointf;
     using size_type = Sizef;
     using rect_type = Rectf;
@@ -107,6 +108,26 @@ public:
 
     RealCanvas& clear(Rectf rect) {
         canvas_.clear(map(rect));
+        return *this;
+    }
+
+    template<typename Fn, typename... Args>
+    RealCanvas& stroke(Color const& color, Rectf const& rect, Fn&& fn, Args&&... args) {
+        canvas_.stroke(color, map(rect), [this,&fn](typename Canvas::coord_type x) {
+            auto real_bounds = fn(unmap(Point(x, 0)).x, unmap(Point(x + 1, 0)).x);
+            auto base = map(Pointf(0, real_bounds.first)).y,
+                 end = map(Pointf(0, real_bounds.second)).y;
+            return (base != end) ? std::make_pair(base, end)
+                                 : std::make_pair(base, base+1);
+        }, std::forward<Args>(args)...);
+        return *this;
+    }
+
+    template<typename Fn, typename... Args>
+    RealCanvas& fill(Color const& color, Rectf const& rect, Fn&& fn, Args&&... args) {
+        canvas_.fill(color, map(rect), [this,&fn](typename Canvas::point_type p) {
+            return fn(unmap(p));
+        }, std::forward<Args>(args)...);
         return *this;
     }
 

@@ -53,6 +53,9 @@ constexpr GenericRect<T> operator/(T const& lhs, GenericRect<T> const& rhs);
 template<typename T>
 struct GenericRect
 {
+    using coord_type = T;
+    using point_type = GenericPoint<T>;
+
     constexpr GenericRect() = default;
 
     constexpr GenericRect(GenericPoint<T> const& p1, GenericPoint<T> const& p2)
