@@ -35,7 +35,7 @@ struct GenericRect
         : p1(p1), p2(p2)
         {}
 
-    constexpr GenericRect(Size const& size)
+    constexpr GenericRect(GenericSize<T> const& size)
         : p1(), p2(size)
         {}
 
