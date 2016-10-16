@@ -39,6 +39,8 @@ class Header:
 
         pos = 0
 
+        self.comment = None
+
         # Extract first comment
         m = self.FIRST_COMMENT.match(self.map)
         if m is not None:
