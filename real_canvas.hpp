@@ -57,6 +57,9 @@ public:
         : bounds_(bounds), canvas_(std::forward<Args>(args)...)
         {}
 
+    RealCanvas(RealCanvas const&) = default;
+    RealCanvas(RealCanvas&&) = default;
+
     Canvas& canvas() {
         return canvas_;
     }
@@ -67,6 +70,10 @@ public:
 
     Rectf bounds() const {
         return bounds_;
+    }
+
+    void bounds(Rectf bounds) {
+        bounds_ = bounds;
     }
 
     Sizef size() const {
