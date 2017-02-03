@@ -22,14 +22,16 @@
 
 default: all
 
+.PHONY: all clean
+
 CXX=g++
-CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic -Werror
+override CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic
 LIBS = -lm
 
 ifdef DEBUG
-	CXXFLAGS += -g -O0
+	override CXXFLAGS += -g -O0
 else
-	CXXFLAGS += -flto -Ofast -mavx2 -DNDEBUG
+	override CXXFLAGS += -flto -Ofast -DNDEBUG
 endif
 
 headers := $(wildcard ../*.hpp)
