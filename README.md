@@ -1,12 +1,26 @@
 # C++ terminal plotting library
 
-***WARNING: This library is a work in progress - still missing some basic features!***
+***WARNING: This library is a work in progress!***
 
 Header-only.
 
-Compile examples with C++14 support; link with `-lm`. A makefile is available.
+Compile examples with C++14 support; link with `-lm`. The library tries to
+detect terminal capabilities automatically; a xterm-compatible terminal
+is recommended.
 
-Run in a xterm compatible terminal.
+A makefile is provided in the `examples` directory. A CMake project and
+a Code::Blocks project are also included in the `projects` directory
+for IDE support.
+
+## Build script
+
+`build.py` is a python script which can pack all headers into a
+single-header library. The following command will generate a
+header file (`plot.hpp`) ready for inclusion in other projects.
+
+```sh
+./build.py braille.hpp real_canvas.hpp layout.hpp > plot.hpp
+```
 
 ## Demo
 
