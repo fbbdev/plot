@@ -76,7 +76,7 @@ struct Color {
         return std::abs(other.hue() - hue());
     }
 
-    constexpr float hue() const {
+    float hue() const {
         float min = utils::min(r, utils::min(g, b)),
               max = utils::max(r, utils::max(g, b));
         auto h = (max == r) ? (g - b)/(max - min) :

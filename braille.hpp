@@ -87,7 +87,7 @@ namespace detail { namespace braille
             return *this;
         }
 
-        constexpr block_t over(block_t const& other) const {
+        block_t over(block_t const& other) const {
             auto old = bitcount(other.pixels & ~pixels);
             auto new_ = bitcount(pixels & ~other.pixels);
 
@@ -105,7 +105,7 @@ namespace detail { namespace braille
             return { mixed_color, std::uint8_t(pixels | other.pixels) };
         }
 
-        constexpr block_t paint(block_t const& dst, TerminalOp op) const {
+        block_t paint(block_t const& dst, TerminalOp op) const {
             if (pixels) {
                 switch (op) {
                     case TerminalOp::Over:
