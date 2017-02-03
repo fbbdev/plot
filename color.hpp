@@ -66,13 +66,13 @@ struct Color {
         return { r/a, g/a, b/a, a };
     }
 
-    constexpr float distance(Color const& other) const {
+    float distance(Color const& other) const {
         auto rmean = (other.r + r)/2;
         auto diff = other - (*this);
         return std::sqrt((2.0f + rmean)*diff.r*diff.r + 4.0f*diff.g*diff.g + (3.0f - rmean)*diff.b*diff.b);
     }
 
-    constexpr float hue_distance(Color const& other) const {
+    float hue_distance(Color const& other) const {
         return std::abs(other.hue() - hue());
     }
 
@@ -88,7 +88,7 @@ struct Color {
         return (premultiplied() + other.premultiplied()*(1.0f - a)).unpremultiplied();
     }
 
-    constexpr Color32 color32(std::uint8_t white = 255, std::uint8_t opaque = 255) const {
+    Color32 color32(std::uint8_t white = 255, std::uint8_t opaque = 255) const {
         using utils::clamp;
         return {
             std::uint8_t(std::lround(clamp(r, 0.0f, 1.0f)*white)),
