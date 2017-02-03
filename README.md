@@ -12,6 +12,9 @@ A makefile is provided in the `examples` directory. A CMake project and
 a Code::Blocks project are also included in the `projects` directory
 for IDE support.
 
+Please note that non-POSIX platforms (e.g. Windows) are currently not
+supported and compilation for them will fail.
+
 ## Build script
 
 `build.py` is a python script which can pack all headers into a
