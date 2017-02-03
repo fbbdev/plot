@@ -66,7 +66,7 @@ struct GenericRect
         : p1(), p2(size)
         {}
 
-    constexpr GenericRect sorted() const {
+    GenericRect sorted() const {
         auto x = utils::minmax(p1.x, p2.x);
         auto y = utils::minmax(p1.y, p2.y);
         return {
