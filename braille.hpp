@@ -59,17 +59,17 @@ namespace detail { namespace braille
     struct block_t {
         constexpr block_t() = default;
 
-        constexpr block_t(Color color, bool px00, bool px01, bool px02, bool px03,
+        constexpr block_t(Color icolor, bool px00, bool px01, bool px02, bool px03,
                                        bool px10, bool px11, bool px12, bool px13)
-            : color(color),
+            : color(icolor),
               pixels(pixel_codes[0][0]*px00 | pixel_codes[0][1]*px01 |
                      pixel_codes[0][2]*px02 | pixel_codes[0][3]*px03 |
                      pixel_codes[1][0]*px10 | pixel_codes[1][1]*px11 |
                      pixel_codes[1][2]*px12 | pixel_codes[1][3]*px13)
             {}
 
-        constexpr block_t(Color color, std::uint8_t pixels = 0)
-            : color(color), pixels(pixels)
+        constexpr block_t(Color icolor, std::uint8_t ipixels = 0)
+            : color(icolor), pixels(ipixels)
             {}
 
         block_t& clear() {
@@ -203,8 +203,8 @@ namespace detail { namespace braille
         template<typename>
         friend std::ostream& operator<<(std::ostream&, line_t const&);
 
-        line_t(BrailleCanvas const* canvas, image_t::const_iterator it)
-            : canvas(canvas), it(it)
+        line_t(BrailleCanvas const* icanvas, image_t::const_iterator iit)
+            : canvas(icanvas), it(iit)
             {}
 
         line_t next() const;
@@ -238,16 +238,16 @@ public:
 
     BrailleCanvas() = default;
 
-    BrailleCanvas(Size char_size, TerminalInfo term = TerminalInfo())
+    BrailleCanvas(Size char_size, TerminalInfo iterm = TerminalInfo())
         : lines(char_size.y), cols(char_size.x), blocks(char_size),
-          background(term.background_color), term(term)
+          background(iterm.background_color), term(iterm)
     {
         available_layers.emplace_front(char_size);
     }
 
-    BrailleCanvas(Color background, Size char_size, TerminalInfo term = TerminalInfo())
+    BrailleCanvas(Color ibackground, Size char_size, TerminalInfo iterm = TerminalInfo())
         : lines(char_size.y), cols(char_size.x), blocks(char_size),
-          background(background), term(term)
+          background(ibackground), term(iterm)
     {
         available_layers.emplace_front(char_size);
     }
@@ -317,8 +317,8 @@ public:
         return *this;
     }
 
-    BrailleCanvas& clear(Color background) {
-        this->background = background;
+    BrailleCanvas& clear(Color ibackground) {
+        this->background = ibackground;
         return clear();
     }
 

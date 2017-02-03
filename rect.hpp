@@ -58,8 +58,8 @@ struct GenericRect
 
     constexpr GenericRect() = default;
 
-    constexpr GenericRect(GenericPoint<T> const& p1, GenericPoint<T> const& p2)
-        : p1(p1), p2(p2)
+    constexpr GenericRect(GenericPoint<T> const& ip1, GenericPoint<T> const& ip2)
+        : p1(ip1), p2(ip2)
         {}
 
     constexpr GenericRect(GenericSize<T> const& size)

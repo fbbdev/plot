@@ -382,19 +382,19 @@ using Terminal = int;
 
 class TerminalInfo {
 public:
-    explicit TerminalInfo(Terminal term = STDOUT_FILENO,
-                          TerminalMode mode = TerminalMode::None,
-                          Color foreground_color = { 0.9f, 0.9f, 0.9f, 1 },
-                          Color background_color = { 0, 0, 0, 1 })
-        : mode(mode), foreground_color(foreground_color), background_color(background_color), term(term)
+    explicit TerminalInfo(Terminal iterm = STDOUT_FILENO,
+                          TerminalMode imode = TerminalMode::None,
+                          Color iforeground_color = { 0.9f, 0.9f, 0.9f, 1 },
+                          Color ibackground_color = { 0, 0, 0, 1 })
+        : mode(imode), foreground_color(iforeground_color), background_color(ibackground_color), term(iterm)
         {}
 
     bool is_terminal() const {
         return isatty(term);
     }
 
-    bool supported(TerminalMode mode) const {
-        return int(mode) <= int(this->mode);
+    bool supported(TerminalMode imode) const {
+        return int(imode) <= int(this->mode);
     }
 
     Size size() const {
@@ -528,8 +528,8 @@ namespace detail
 {
     struct tcsetattr_guard
     {
-        tcsetattr_guard(Terminal term, struct termios old, struct termios new_)
-            : term(term), old(old), new_(new_)
+        tcsetattr_guard(Terminal iterm, struct termios iold, struct termios inew_)
+            : term(iterm), old(iold), new_(inew_)
             {}
 
         ~tcsetattr_guard() {
