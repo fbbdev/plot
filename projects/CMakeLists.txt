@@ -29,7 +29,6 @@ set(HEADER_FILES
         ../braille.hpp
         ../color.hpp
         ../layout.hpp
-        ../plot.hpp
         ../point.hpp
         ../real_canvas.hpp
         ../rect.hpp
@@ -44,3 +43,12 @@ add_executable(real_canvas ../examples/real_canvas.cpp ${HEADER_FILES})
 add_executable(frame ../examples/frame.cpp ${HEADER_FILES})
 add_executable(animation ../examples/animation.cpp ${HEADER_FILES})
 add_executable(boxes ../examples/boxes.cpp ${HEADER_FILES})
+
+set(LIBS m)
+
+target_link_libraries(terminal ${LIBS})
+target_link_libraries(canvas ${LIBS})
+target_link_libraries(real_canvas ${LIBS})
+target_link_libraries(frame ${LIBS})
+target_link_libraries(animation ${LIBS})
+target_link_libraries(boxes ${LIBS})
