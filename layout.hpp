@@ -83,7 +83,7 @@ namespace detail
     private:
         friend Block;
 
-        block_iterator(Line line) : line(line) {}
+        block_iterator(Line iline) : line(iline) {}
 
         Line line;
     };
@@ -131,8 +131,8 @@ namespace detail
         template<typename, bool>
         friend struct normal_block_ref_traits;
 
-        single_line_adapter(pointer block, bool end = false)
-            : block(block), end(end)
+        single_line_adapter(pointer iblock, bool iend = false)
+            : block(iblock), end(iend)
             {}
 
         pointer block;
@@ -342,9 +342,9 @@ namespace detail
 
         friend std::ostream& operator<< <Block>(std::ostream&, margin_line const&);
 
-        margin_line(Margin<Block> const* margin, std::ptrdiff_t overflow,
-                    block_iterator line, block_iterator end)
-            : margin(margin), overflow(overflow), line(std::move(line)), end(std::move(end))
+        margin_line(Margin<Block> const* imargin, std::ptrdiff_t ioverflow,
+                    block_iterator iline, block_iterator iend)
+            : margin(imargin), overflow(ioverflow), line(std::move(iline)), end(std::move(iend))
             {}
 
         margin_line next() const {
@@ -394,21 +394,21 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit Margin(Block block)
-        : block(std::move(block))
+    explicit Margin(Block iblock)
+        : block(std::move(iblock))
         {}
 
-    explicit Margin(std::size_t margin, Block block)
-        : top(margin), right(margin), bottom(margin), left(margin), block(std::move(block))
+    explicit Margin(std::size_t imargin, Block iblock)
+        : top(imargin), right(imargin), bottom(imargin), left(imargin), block(std::move(iblock))
         {}
 
-    explicit Margin(std::size_t v, std::size_t h, Block block)
-        : top(v), right(h), bottom(v), left(h), block(std::move(block))
+    explicit Margin(std::size_t iv, std::size_t ih, Block iblock)
+        : top(iv), right(ih), bottom(iv), left(ih), block(std::move(iblock))
         {}
 
-    explicit Margin(std::size_t top, std::size_t right, std::size_t bottom,
-                    std::size_t left, Block block)
-        : top(top), right(right), bottom(bottom), left(left), block(std::move(block))
+    explicit Margin(std::size_t itop, std::size_t iright, std::size_t ibottom,
+                    std::size_t ileft, Block iblock)
+        : top(itop), right(iright), bottom(ibottom), left(ileft), block(std::move(iblock))
         {}
 
     Size size() const {
@@ -488,9 +488,9 @@ namespace detail
 
         friend std::ostream& operator<< <Block>(std::ostream&, frame_line const&);
 
-        frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
-                   block_iterator line, block_iterator end)
-            : frame(frame), overflow(overflow), line(std::move(line)), end(std::move(end))
+        frame_line(Frame<Block> const* iframe, std::ptrdiff_t ioverflow,
+                   block_iterator iline, block_iterator iend)
+            : frame(iframe), overflow(ioverflow), line(std::move(iline)), end(std::move(iend))
             {}
 
         frame_line next() const {
@@ -522,28 +522,28 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit Frame(Block block, TerminalInfo term = TerminalInfo())
-        : block(std::move(block)), term(term)
+    explicit Frame(Block iblock, TerminalInfo iterm = TerminalInfo())
+        : block(std::move(iblock)), term(iterm)
         {}
 
-    explicit Frame(Border border, Block block, TerminalInfo term = TerminalInfo())
-        : border(border), block(std::move(block)), term(term)
+    explicit Frame(Border iborder, Block iblock, TerminalInfo iterm = TerminalInfo())
+        : border(iborder), block(std::move(iblock)), term(iterm)
         {}
 
-    explicit Frame(string_view label, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), block(std::move(block)), term(term)
+    explicit Frame(string_view ilabel, Block iblock, TerminalInfo iterm = TerminalInfo())
+        : label(ilabel), block(std::move(iblock)), term(iterm)
         {}
 
-    explicit Frame(string_view label, Align align, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), block(std::move(block)), term(term)
+    explicit Frame(string_view ilabel, Align ialign, Block iblock, TerminalInfo iterm = TerminalInfo())
+        : label(ilabel), align(ialign), block(std::move(iblock)), term(iterm)
         {}
 
-    explicit Frame(string_view label, Border border, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), border(border), block(std::move(block)), term(term)
+    explicit Frame(string_view ilabel, Border iborder, Block iblock, TerminalInfo iterm = TerminalInfo())
+        : label(ilabel), border(iborder), block(std::move(iblock)), term(iterm)
         {}
 
-    explicit Frame(string_view label, Align align, Border border, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), border(border), block(std::move(block)), term(term)
+    explicit Frame(string_view ilabel, Align ialign, Border iborder, Block iblock, TerminalInfo iterm = TerminalInfo())
+        : label(ilabel), align(ialign), border(iborder), block(std::move(iblock)), term(iterm)
         {}
 
     Size size() const {
@@ -715,9 +715,9 @@ namespace detail
 
         friend std::ostream& operator<< <Blocks...>(std::ostream&, vbox_line const&);
 
-        vbox_line(VBox<Blocks...> const* vbox, std::size_t margin,
-                  block_iterators lines, block_iterators ends)
-            : vbox(vbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+        vbox_line(VBox<Blocks...> const* ivbox, std::size_t imargin,
+                  block_iterators ilines, block_iterators iends)
+            : vbox(ivbox), margin(imargin), lines(std::move(ilines)), ends(std::move(iends))
             {}
 
         vbox_line next() const {
@@ -807,12 +807,12 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit VBox(Blocks... blocks)
-        : blocks(std::move(blocks)...)
+    explicit VBox(Blocks... iblocks)
+        : blocks(std::move(iblocks)...)
         {}
 
-    explicit VBox(std::size_t margin, Blocks... blocks)
-        : margin(margin), blocks(std::move(blocks)...)
+    explicit VBox(std::size_t imargin, Blocks... iblocks)
+        : margin(imargin), blocks(std::move(iblocks)...)
         {}
 
     Size size() const {
@@ -910,8 +910,8 @@ namespace detail
 
         friend std::ostream& operator<< <Blocks...>(std::ostream&, hbox_line const&);
 
-        hbox_line(HBox<Blocks...> const* hbox, std::size_t margin, block_iterators lines, block_iterators ends)
-            : hbox(hbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+        hbox_line(HBox<Blocks...> const* ihbox, std::size_t imargin, block_iterators ilines, block_iterators iends)
+            : hbox(ihbox), margin(imargin), lines(std::move(ilines)), ends(std::move(iends))
             {}
 
         hbox_line next() const {
@@ -990,12 +990,12 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit HBox(Blocks... blocks)
-        : blocks(std::move(blocks)...)
+    explicit HBox(Blocks... iblocks)
+        : blocks(std::move(iblocks)...)
         {}
 
-    explicit HBox(std::size_t margin, Blocks... blocks)
-        : margin(margin), blocks(std::move(blocks)...)
+    explicit HBox(std::size_t imargin, Blocks... iblocks)
+        : margin(imargin), blocks(std::move(iblocks)...)
         {}
 
     Size size() const {

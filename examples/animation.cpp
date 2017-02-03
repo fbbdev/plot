@@ -55,18 +55,18 @@ int main() {
 
     float t = 0.0f;
 
-    auto sin = [N,f](float t, float x) {
-        return std::sin(2*3.141592f*f*(t + x/N));
+    auto sin = [N,f](float tt, float x) {
+        return std::sin(2*3.141592f*f*(tt + x/N));
     };
 
-    auto cos = [N,f](float t, float x) {
-        return std::cos(2*3.141592f*f*(t + x/N));
+    auto cos = [N,f](float tt, float x) {
+        return std::cos(2*3.141592f*f*(tt + x/N));
     };
 
-    auto stroke_fn = [y0,A](auto const& fn, float t) {
-        return [y0,A,fn,t](float x) {
-            Coord base = y0 + A - std::lround(A*fn(t, x)),
-                  end  = y0 + A - std::lround(A*fn(t, x + 1));
+    auto stroke_fn = [y0,A](auto const& fn, float tt) {
+        return [y0,A,fn,tt](float x) {
+            Coord base = y0 + A - std::lround(A*fn(tt, x)),
+                  end  = y0 + A - std::lround(A*fn(tt, x + 1));
             return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
         };
     };
