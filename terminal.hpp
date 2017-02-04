@@ -386,11 +386,11 @@ public:
                           TerminalMode mode = TerminalMode::None,
                           Color foreground_color = { 0.9f, 0.9f, 0.9f, 1 },
                           Color background_color = { 0, 0, 0, 1 })
-        : mode(mode), foreground_color(foreground_color), background_color(background_color), term(term)
+        : mode(mode), foreground_color(foreground_color), background_color(background_color), term_(term)
         {}
 
     bool is_terminal() const {
-        return isatty(term);
+        return isatty(term_);
     }
 
     bool supported(TerminalMode mode) const {
@@ -403,7 +403,7 @@ public:
 
         struct winsize ws = {};
 
-        if (ioctl(term, TIOCGWINSZ, &ws))
+        if (ioctl(term_, TIOCGWINSZ, &ws))
             return {};
 
         return { ws.ws_col, ws.ws_row };
@@ -520,7 +520,7 @@ private:
     template<typename = void>
     std::string query(string_view query, string_view terminator);
 
-    Terminal term;
+    Terminal term_;
 };
 
 
@@ -528,8 +528,8 @@ namespace detail
 {
     struct tcsetattr_guard
     {
-        tcsetattr_guard(Terminal term, struct termios old, struct termios new_)
-            : term(term), old(old), new_(new_)
+        tcsetattr_guard(Terminal term, struct termios old, struct termios newtermios)
+            : term(term), old(old), new_(newtermios)
             {}
 
         ~tcsetattr_guard() {
@@ -634,7 +634,7 @@ std::string TerminalInfo::query(string_view query, string_view terminator) {
     newAttrs.c_cc[VMIN] = 0;
     newAttrs.c_cc[VTIME] = 0;
 
-    detail::tcsetattr_guard guard(term, oldAttrs, newAttrs);
+    detail::tcsetattr_guard guard(term_, oldAttrs, newAttrs);
     if (!guard.set())
         return std::string();
 

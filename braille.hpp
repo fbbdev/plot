@@ -239,25 +239,25 @@ public:
     BrailleCanvas() = default;
 
     BrailleCanvas(Size char_size, TerminalInfo term = TerminalInfo())
-        : lines(char_size.y), cols(char_size.x), blocks(char_size),
-          background(term.background_color), term(term)
+        : lines_(char_size.y), cols_(char_size.x), blocks_(char_size),
+          background_(term.background_color), term_(term)
     {
-        available_layers.emplace_front(char_size);
+        available_layers_.emplace_front(char_size);
     }
 
     BrailleCanvas(Color background, Size char_size, TerminalInfo term = TerminalInfo())
-        : lines(char_size.y), cols(char_size.x), blocks(char_size),
-          background(background), term(term)
+        : lines_(char_size.y), cols_(char_size.x), blocks_(char_size),
+          background_(background), term_(term)
     {
-        available_layers.emplace_front(char_size);
+        available_layers_.emplace_front(char_size);
     }
 
     Size char_size() const {
-        return { Coord(cols), Coord(lines) };
+        return { Coord(cols_), Coord(lines_) };
     }
 
     Size size() const {
-        return { Coord(2*cols), Coord(4*lines) };
+        return { Coord(2*cols_), Coord(4*lines_) };
     }
 
     const_iterator begin() const {
@@ -269,56 +269,56 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { { this, blocks.cbegin() } };
+        return { { this, blocks_.cbegin() } };
     }
 
     const_iterator cend() const {
-        return { { this, blocks.cend() } };
+        return { { this, blocks_.cend() } };
     }
 
     BrailleCanvas& push() {
-        if (available_layers.empty())
-            available_layers.emplace_front(char_size());
+        if (available_layers_.empty())
+            available_layers_.emplace_front(char_size());
 
-        stack.splice_after(stack.before_begin(), available_layers, available_layers.before_begin());
-        blocks.swap(stack.front());
-        blocks.clear();
+        stack_.splice_after(stack_.before_begin(), available_layers_, available_layers_.before_begin());
+        blocks_.swap(stack_.front());
+        blocks_.clear();
         return *this;
     }
 
     BrailleCanvas& pop(TerminalOp op = TerminalOp::Over) {
-        if (!stack.empty()) {
-            stack.front().paint(blocks, op);
-            blocks.swap(stack.front());
-            available_layers.splice_after(available_layers.before_begin(), stack, stack.before_begin());
+        if (!stack_.empty()) {
+            stack_.front().paint(blocks_, op);
+            blocks_.swap(stack_.front());
+            available_layers_.splice_after(available_layers_.before_begin(), stack_, stack_.before_begin());
         }
         return *this;
     }
 
     BrailleCanvas& resize(Size size) {
         if (size != char_size()) {
-            blocks.resize(char_size(), size);
+            blocks_.resize(char_size(), size);
 
-            for (auto& layer: stack)
+            for (auto& layer: stack_)
                 layer.resize(char_size(), size);
 
-            if (!available_layers.empty()) {
-                available_layers.clear();
-                available_layers.emplace_front(size);
+            if (!available_layers_.empty()) {
+                available_layers_.clear();
+                available_layers_.emplace_front(size);
             }
 
-            lines = size.y; cols = size.x;
+            lines_ = size.y; cols_ = size.x;
         }
         return *this;
     }
 
     BrailleCanvas& clear() {
-        blocks.clear();
+        blocks_.clear();
         return *this;
     }
 
     BrailleCanvas& clear(Color background) {
-        this->background = background;
+        this->background_ = background;
         return clear();
     }
 
@@ -536,11 +536,11 @@ private:
     friend std::ostream& detail::braille::operator<<(std::ostream&, detail::braille::line_t const&);
 
     detail::braille::block_t& block(std::size_t line, std::size_t col) {
-        return blocks[cols*line + col];
+        return blocks_[cols_*line + col];
     }
 
     detail::braille::block_t const& block(std::size_t line, std::size_t col) const {
-        return blocks[cols*line + col];
+        return blocks_[cols_*line + col];
     }
 
     detail::braille::block_t& paint(std::size_t line, std::size_t col,
@@ -549,14 +549,14 @@ private:
         return dst = src.paint(dst, op);
     }
 
-    std::size_t lines = 0, cols = 0;
-    detail::braille::image_t blocks;
+    std::size_t lines_ = 0, cols_ = 0;
+    detail::braille::image_t blocks_;
 
-    std::forward_list<detail::braille::image_t> stack;
-    std::forward_list<detail::braille::image_t> available_layers;
+    std::forward_list<detail::braille::image_t> stack_;
+    std::forward_list<detail::braille::image_t> available_layers_;
 
-    Color background = { 0, 0, 0, 1 };
-    TerminalInfo term;
+    Color background_ = { 0, 0, 0, 1 };
+    TerminalInfo term_;
 };
 
 template<typename Fn>
@@ -648,13 +648,13 @@ inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canva
 namespace detail { namespace braille
 {
     inline line_t line_t::next() const {
-        return { canvas, std::next(it, canvas->cols) };
+        return { canvas, std::next(it, canvas->cols_) };
     }
 
     template<typename>
     std::ostream& operator<<(std::ostream& stream, line_t const& line) {
         auto const& canvas = *line.canvas;
-        auto const& term = canvas.term;
+        auto const& term = canvas.term_;
 
         // Reset attributes + Bold mode
         // XXX: Empty dots in braille patterns are often rendered as empty
@@ -667,9 +667,9 @@ namespace detail { namespace braille
         // In UTF-8:
         //   0b1110'0010, 0b10'1000'xx 0b10'xxxxxx
 
-        for (auto it = line.it, end = line.it+canvas.cols; it != end; ++it) {
+        for (auto it = line.it, end = line.it+canvas.cols_; it != end; ++it) {
             if (it->pixels) {
-                stream << term.foreground(it->color.over(canvas.background).premultiplied())
+                stream << term.foreground(it->color.over(canvas.background_).premultiplied())
                        << char(0b1110'0010)
                        << char(0b10'1000'00 | ((it->pixels & 0b11'000000) >> 6))
                        << char(0b10'000000 | (it->pixels & 0b00'111111));
