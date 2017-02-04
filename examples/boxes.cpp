@@ -61,9 +61,8 @@ int main() {
     auto circle_bounds = circle.bounds();
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
-    float f = 2;
+    float f = 2.0f;
 
-    float t = 0.0f;
 
     auto sin = [N,f](float t, float x) {
         return std::sin(2*3.141592f*f*(t + x/N));
@@ -90,6 +89,7 @@ int main() {
         };
     };
 
+    float t = 0.0f;
     while (true) {
         waves.clear()
              .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
@@ -120,9 +120,9 @@ int main() {
 
         auto track_length = N/Coord(2*f)/2;
         for (Coord x = 0; x < track_length; ++x) {
-            Pointf pos(sincos(t, N - x), sin2(t, N - x));
-            Pointf prev(sincos(t, N - x - 1), sin2(t, N - x - 1));
-            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), pos, prev);
+            Pointf start(sincos(t, N - x), sin2(t, N - x));
+            Pointf end(sincos(t, N - x - 1), sin2(t, N - x - 1));
+            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), start, end);
         }
 
         circle.pop();
