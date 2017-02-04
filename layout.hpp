@@ -83,7 +83,7 @@ namespace detail
     private:
         friend Block;
 
-        block_iterator(Line line) : line(line) {}
+        block_iterator(const Line &line) : line(line) {}
 
         Line line;
     };
