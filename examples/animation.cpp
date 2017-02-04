@@ -51,9 +51,7 @@ int main() {
     auto size = rect.size() + Point(1, 1);
 
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
-    float f = 2;
-
-    float t = 0.0f;
+    float f = 2.0f;
 
     auto sin = [N,f](float t, float x) {
         return std::sin(2*3.141592f*f*(t + x/N));
@@ -71,6 +69,7 @@ int main() {
         };
     };
 
+    float t = 0.0f;
     while (true) {
         canvas.clear()
               .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
