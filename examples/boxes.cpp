@@ -63,33 +63,32 @@ int main() {
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2;
 
-    float t = 0.0f;
-
-    auto sin = [N,f](float t, float x) {
-        return std::sin(2*3.141592f*f*(t + x/N));
+    auto sin = [N,f](float tt, float x) {
+        return std::sin(2*3.141592f*f*(tt + x/N));
     };
 
-    auto cos = [N,f](float t, float x) {
-        return std::cos(2*3.141592f*f*(t + x/N));
+    auto cos = [N,f](float tt, float x) {
+        return std::cos(2*3.141592f*f*(tt + x/N));
     };
 
-    auto sin2 = [sin](float t, float x) {
-        auto val = sin(t, x);
+    auto sin2 = [sin](float tt, float x) {
+        auto val = sin(tt, x);
         return val*val;
     };
 
-    auto sincos = [sin,cos](float t, float x) {
-        return sin(t, x) * cos(t, x);
+    auto sincos = [sin,cos](float tt, float x) {
+        return sin(tt, x) * cos(tt, x);
     };
 
-    auto stroke_fn = [y0,A](auto const& fn, float t) {
-        return [y0,A,fn,t](float x) {
-            Coord base = y0 + A - std::lround(A*fn(t, x)),
-                  end  = y0 + A - std::lround(A*fn(t, x + 1));
+    auto stroke_fn = [y0,A](auto const& fn, float tt) {
+        return [y0,A,fn,tt](float x) {
+            Coord base = y0 + A - std::lround(A*fn(tt, x)),
+                  end  = y0 + A - std::lround(A*fn(tt, x + 1));
             return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
         };
     };
 
+    float t = 0.0f;
     while (true) {
         waves.clear()
              .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
@@ -120,9 +119,9 @@ int main() {
 
         auto track_length = N/Coord(2*f)/2;
         for (Coord x = 0; x < track_length; ++x) {
-            Pointf pos(sincos(t, N - x), sin2(t, N - x));
+            Pointf npos(sincos(t, N - x), sin2(t, N - x));
             Pointf prev(sincos(t, N - x - 1), sin2(t, N - x - 1));
-            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), pos, prev);
+            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), npos, prev);
         }
 
         circle.pop();
