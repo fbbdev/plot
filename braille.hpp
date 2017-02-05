@@ -648,7 +648,7 @@ inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canva
 namespace detail { namespace braille
 {
     inline line_t line_t::next() const {
-        return { canvas_, std::next(it_, canvas->cols_) };
+        return { canvas_, std::next(it_, canvas_->cols_) };
     }
 
     template<typename>
