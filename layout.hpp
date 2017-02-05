@@ -736,7 +736,7 @@ namespace detail
             return {
                 vbox_,
                 (find_true((std::get<N>(next) != std::get<N>(ends_))...) != current) ? vbox_->margin_ : 0,
-                next_,
+                next,
                 ends_
             };
         }
