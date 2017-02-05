@@ -83,7 +83,7 @@ namespace detail
     private:
         friend Block;
 
-        block_iterator(Line line) : line_(line) {}
+        block_iterator(Line line) : line_(std::move(line)) {}
 
         Line line_;
     };
