@@ -204,17 +204,17 @@ namespace detail { namespace braille
         friend std::ostream& operator<<(std::ostream&, line_t const&);
 
         line_t(BrailleCanvas const* canvas, image_t::const_iterator it)
-            : canvas(canvas), it(it)
+            : canvas_(canvas), it_(it)
             {}
 
         line_t next() const;
 
         bool equal(line_t const& other) const {
-            return it == other.it;
+            return it_ == other.it_;
         }
 
-        BrailleCanvas const* canvas = nullptr;
-        image_t::const_iterator it{};
+        BrailleCanvas const* canvas_ = nullptr;
+        image_t::const_iterator it_{};
 
     public:
         line_t() = default;
@@ -648,12 +648,12 @@ inline std::ostream& operator<<(std::ostream& stream, BrailleCanvas const& canva
 namespace detail { namespace braille
 {
     inline line_t line_t::next() const {
-        return { canvas, std::next(it, canvas->cols_) };
+        return { canvas_, std::next(it_, canvas->cols_) };
     }
 
     template<typename>
     std::ostream& operator<<(std::ostream& stream, line_t const& line) {
-        auto const& canvas = *line.canvas;
+        auto const& canvas = *line.canvas_;
         auto const& term = canvas.term_;
 
         // Reset attributes + Bold mode
@@ -667,7 +667,7 @@ namespace detail { namespace braille
         // In UTF-8:
         //   0b1110'0010, 0b10'1000'xx 0b10'xxxxxx
 
-        for (auto it = line.it, end = line.it+canvas.cols_; it != end; ++it) {
+        for (auto it = line.it_, end = line.it_+canvas.cols_; it != end; ++it) {
             if (it->pixels) {
                 stream << term.foreground(it->color.over(canvas.background_).premultiplied())
                        << char(0b1110'0010)
