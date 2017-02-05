@@ -22,9 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include "../braille.hpp"
-#include "../real_canvas.hpp"
-#include "../layout.hpp"
+#include "../plot.hpp"
 
 #include <cmath>
 #include <csignal>

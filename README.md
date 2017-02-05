@@ -19,10 +19,10 @@ supported and compilation for them will fail.
 
 `build.py` is a python script which can pack all headers into a
 single-header library. The following command will generate a
-header file (`plot.hpp`) ready for inclusion in other projects.
+header file (`plot_lib.hpp`) ready for inclusion in other projects.
 
 ```sh
-./build.py braille.hpp real_canvas.hpp layout.hpp > plot.hpp
+./build.py plot.hpp > plot_lib.hpp
 ```
 
 ## Demo
