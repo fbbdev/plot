@@ -54,38 +54,38 @@ namespace detail
         block_iterator() = default;
 
         reference operator*() const {
-            return line;
+            return line_;
         }
 
         pointer operator->() const {
-            return &line;
+            return &line_;
         }
 
         block_iterator& operator++() {
-            line = line.next();
+            line_ = line_.next();
             return *this;
         }
 
         block_iterator operator++(int) {
             block_iterator prev = *this;
-            line = line.next();
+            line_ = line_.next();
             return prev;
         }
 
         bool operator==(block_iterator const& other) const {
-            return line.equal(other.line);
+            return line_.equal(other.line_);
         }
 
         bool operator!=(block_iterator const& other) const {
-            return !line.equal(other.line);
+            return !line_.equal(other.line_);
         }
 
     private:
         friend Block;
 
-        block_iterator(Line line) : line(std::move(line)) {}
+        block_iterator(Line line) : line_(std::move(line)) {}
 
-        Line line;
+        Line line_;
     };
 
     template<typename Block>
@@ -101,30 +101,30 @@ namespace detail
         single_line_adapter() = default;
 
         reference operator*() const {
-            return *block;
+            return *block_;
         }
 
         pointer operator->() const {
-            return block;
+            return block_;
         }
 
         single_line_adapter& operator++() {
-            end = true;
+            end_ = true;
             return *this;
         }
 
         single_line_adapter operator++(int) {
             single_line_adapter prev = *this;
-            end = true;
+            end_ = true;
             return prev;
         }
 
         bool operator==(single_line_adapter const& other) const {
-            return end == other.end && block == other.block;
+            return end_ == other.end_ && block_ == other.block_;
         }
 
         bool operator!=(single_line_adapter const& other) const {
-            return end != other.end || block != other.block;
+            return end_ != other.end_ || block_ != other.block_;
         }
 
     private:
@@ -132,11 +132,11 @@ namespace detail
         friend struct normal_block_ref_traits;
 
         single_line_adapter(pointer block, bool end = false)
-            : block(block), end(end)
+            : block_(block), end_(end)
             {}
 
-        pointer block;
-        bool end;
+        pointer block_;
+        bool end_;
     };
 
     template<typename Block>
@@ -344,21 +344,21 @@ namespace detail
 
         margin_line(Margin<Block> const* margin, std::ptrdiff_t overflow,
                     block_iterator line, block_iterator end)
-            : margin(margin), overflow(overflow), line(std::move(line)), end(std::move(end))
+            : margin_(margin), overflow_(overflow), line_(std::move(line)), end_(std::move(end))
             {}
 
         margin_line next() const {
-            return (overflow || line == end) ? margin_line(margin, overflow + 1, line, end)
-                                             : margin_line(margin, overflow, std::next(line), end);
+            return (overflow_ || line_ == end_) ? margin_line(margin_, overflow_ + 1, line_, end_)
+                                                : margin_line(margin_, overflow_, std::next(line_), end_);
         }
 
         bool equal(margin_line const& other) const {
-            return line == other.line && overflow == other.overflow;
+            return line_ == other.line_ && overflow_ == other.overflow_;
         }
 
-        Margin<Block> const* margin = nullptr;
-        std::ptrdiff_t overflow = 0;
-        block_iterator line{}, end{};
+        Margin<Block> const* margin_ = nullptr;
+        std::ptrdiff_t overflow_ = 0;
+        block_iterator line_{}, end_{};
 
     public:
         margin_line() = default;
@@ -368,14 +368,14 @@ namespace detail
     inline std::ostream& operator<<(std::ostream& stream, margin_line<Block> const& line) {
         auto fill = stream.fill();
         stream << std::setfill(' ');
-        if (!line.overflow && line.line != line.end) {
-            stream << std::setw(line.margin->left)
+        if (!line.overflow_ && line.line_ != line.end_) {
+            stream << std::setw(line.margin_->left_)
                    << ""
-                   << *line.line
-                   << std::setw(line.margin->right)
+                   << *line.line_
+                   << std::setw(line.margin_->right_)
                    << "";
         } else {
-            stream << std::setw(line.margin->size().x)
+            stream << std::setw(line.margin_->size().x)
                    << "";
         }
 
@@ -394,25 +394,25 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit Margin(Block block)
-        : block(std::move(block))
+    explicit Margin(Block block_)
+        : block_(std::move(block_))
         {}
 
     explicit Margin(std::size_t margin, Block block)
-        : top(margin), right(margin), bottom(margin), left(margin), block(std::move(block))
+        : top_(margin), right_(margin), bottom_(margin), left_(margin), block_(std::move(block))
         {}
 
     explicit Margin(std::size_t v, std::size_t h, Block block)
-        : top(v), right(h), bottom(v), left(h), block(std::move(block))
+        : top_(v), right_(h), bottom_(v), left_(h), block_(std::move(block))
         {}
 
     explicit Margin(std::size_t top, std::size_t right, std::size_t bottom,
                     std::size_t left, Block block)
-        : top(top), right(right), bottom(bottom), left(left), block(std::move(block))
+        : top_(top), right_(right), bottom_(bottom), left_(left), block_(std::move(block))
         {}
 
     Size size() const {
-        return detail::block_traits<Block>::size(block) + Size(left + right, top + bottom);
+        return detail::block_traits<Block>::size(block_) + Size(left_ + right_, top_ + bottom_);
     }
 
     const_iterator begin() const {
@@ -424,18 +424,18 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { { this, -std::ptrdiff_t(top), detail::block_traits<Block>::begin(block), detail::block_traits<Block>::end(block) } };
+        return { { this, -std::ptrdiff_t(top_), detail::block_traits<Block>::begin(block_), detail::block_traits<Block>::end(block_) } };
     }
 
     const_iterator cend() const {
-        return { { this, std::ptrdiff_t(bottom), detail::block_traits<Block>::end(block), detail::block_traits<Block>::end(block) } };
+        return { { this, std::ptrdiff_t(bottom_), detail::block_traits<Block>::end(block_), detail::block_traits<Block>::end(block_) } };
     }
 
 private:
     friend std::ostream& detail::operator<< <Block>(std::ostream&, value_type const&);
 
-    std::size_t top = 1, right = 2, bottom = 1, left = 2;
-    Block block;
+    std::size_t top_ = 1, right_ = 2, bottom_ = 1, left_ = 2;
+    Block block_;
 };
 
 template<typename Block>
@@ -490,21 +490,21 @@ namespace detail
 
         frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
                    block_iterator line, block_iterator end)
-            : frame(frame), overflow(overflow), line(std::move(line)), end(std::move(end))
+            : frame_(frame), overflow_(overflow), line_(std::move(line)), end_(std::move(end))
             {}
 
         frame_line next() const {
-            return (overflow || line == end) ? frame_line(frame, overflow + 1, line, end)
-                                             : frame_line(frame, overflow, std::next(line), end);
+            return (overflow_ || line_ == end_) ? frame_line(frame_, overflow_ + 1, line_, end_)
+                                                : frame_line(frame_, overflow_, std::next(line_), end_);
         }
 
         bool equal(frame_line const& other) const {
-            return line == other.line && overflow == other.overflow;
+            return line_ == other.line_ && overflow_ == other.overflow_;
         }
 
-        Frame<Block> const* frame = nullptr;
-        std::ptrdiff_t overflow = 0;
-        block_iterator line{}, end{};
+        Frame<Block> const* frame_ = nullptr;
+        std::ptrdiff_t overflow_ = 0;
+        block_iterator line_{}, end_{};
 
     public:
         frame_line() = default;
@@ -523,31 +523,31 @@ public:
     using size_type = Size;
 
     explicit Frame(Block block, TerminalInfo term = TerminalInfo())
-        : block(std::move(block)), term(term)
+        : block_(std::move(block)), term_(term)
         {}
 
     explicit Frame(Border border, Block block, TerminalInfo term = TerminalInfo())
-        : border(border), block(std::move(block)), term(term)
+        : border_(border), block_(std::move(block)), term_(term)
         {}
 
     explicit Frame(string_view label, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), block(std::move(block)), term(term)
+        : label_(label), block_(std::move(block)), term_(term)
         {}
 
     explicit Frame(string_view label, Align align, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), block(std::move(block)), term(term)
+        : label_(label), align_(align), block_(std::move(block)), term_(term)
         {}
 
     explicit Frame(string_view label, Border border, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), border(border), block(std::move(block)), term(term)
+        : label_(label), border_(border), block_(std::move(block)), term_(term)
         {}
 
     explicit Frame(string_view label, Align align, Border border, Block block, TerminalInfo term = TerminalInfo())
-        : label(label), align(align), border(border), block(std::move(block)), term(term)
+        : label_(label), align_(align), border_(border), block_(std::move(block)), term_(term)
         {}
 
     Size size() const {
-        return detail::block_traits<Block>::size(block) + Size(2, 2);
+        return detail::block_traits<Block>::size(block_) + Size(2, 2);
     }
 
     const_iterator begin() const {
@@ -559,21 +559,21 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { { this, -1, detail::block_traits<Block>::begin(block), detail::block_traits<Block>::end(block) } };
+        return { { this, -1, detail::block_traits<Block>::begin(block_), detail::block_traits<Block>::end(block_) } };
     }
 
     const_iterator cend() const {
-        return { { this, 1, detail::block_traits<Block>::end(block), detail::block_traits<Block>::end(block) } };
+        return { { this, 1, detail::block_traits<Block>::end(block_), detail::block_traits<Block>::end(block_) } };
     }
 
 private:
     friend std::ostream& detail::operator<< <Block>(std::ostream&, value_type const&);
 
-    string_view label;
-    Align align = Align::Left;
-    Border border{BorderStyle::Solid};
-    Block block;
-    TerminalInfo term;
+    string_view label_;
+    Align align_ = Align::Left;
+    Border border_{BorderStyle::Solid};
+    Block block_;
+    TerminalInfo term_;
 };
 
 template<typename Block>
@@ -588,22 +588,22 @@ namespace detail
 {
     template<typename Block>
     std::ostream& operator<<(std::ostream& stream, frame_line<Block> const& line) {
-        auto size = detail::block_traits<Block>::size(line.frame->block);
-        auto label_margin = std::size_t(size.x) - utils::min(std::size_t(size.x), line.frame->label.size());
-        auto const border = line.frame->border;
+        auto size = detail::block_traits<Block>::size(line.frame_->block_);
+        auto label_margin = std::size_t(size.x) - utils::min(std::size_t(size.x), line.frame_->label_.size());
+        auto const border = line.frame_->border_;
 
-        if (line.overflow < 0) {
+        if (line.overflow_ < 0) {
             std::size_t before_label =
-                (line.frame->align == Align::Center) ? label_margin / 2
-                                                     : (line.frame->align == Align::Right) ? label_margin : 0;
+                (line.frame_->align_ == Align::Center) ? label_margin / 2
+                                                       : (line.frame_->align_ == Align::Right) ? label_margin : 0;
             std::size_t after_label = label_margin - before_label;
 
-            stream << line.frame->term.reset() << border.top_left;
+            stream << line.frame_->term_.reset() << border.top_left;
 
             for (; before_label > 0; --before_label)
                 stream << border.top;
 
-            stream << line.frame->label.substr(0, size.x);
+            stream << line.frame_->label_.substr(0, size.x);
 
             for (; after_label > 0; --after_label)
                 stream << border.top;
@@ -611,8 +611,8 @@ namespace detail
             stream << border.top_right;
 
             return stream;
-        } else if (line.line == line.end) {
-            stream << line.frame->term.reset() << border.bottom_left;
+        } else if (line.line_ == line.end_) {
+            stream << line.frame_->term_.reset() << border.bottom_left;
 
             for (auto i = 0; i < size.x; ++i)
                 stream << border.bottom;
@@ -620,11 +620,11 @@ namespace detail
             return stream << border.bottom_right;
         }
 
-        return stream << line.frame->term.reset()
-                      << line.frame->border.left
-                      << *line.line
-                      << line.frame->term.reset()
-                      << line.frame->border.right;
+        return stream << line.frame_->term_.reset()
+                      << line.frame_->border_.left
+                      << *line.line_
+                      << line.frame_->term_.reset()
+                      << line.frame_->border_.right;
     }
 } /* namespace detail */
 
@@ -717,38 +717,38 @@ namespace detail
 
         vbox_line(VBox<Blocks...> const* vbox, std::size_t margin,
                   block_iterators lines, block_iterators ends)
-            : vbox(vbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+            : vbox_(vbox), margin_(margin), lines_(std::move(lines)), ends_(std::move(ends))
             {}
 
         vbox_line next() const {
-            return margin ? vbox_line(vbox, margin - 1, lines, ends)
-                          : next_impl(std::make_index_sequence<sizeof...(Blocks)>());
+            return margin_ ? vbox_line(vbox_, margin_ - 1, lines_, ends_)
+                           : next_impl(std::make_index_sequence<sizeof...(Blocks)>());
         }
 
         bool equal(vbox_line const& other) const {
-            return lines == other.lines && margin == other.margin;
+            return lines_ == other.lines_ && margin_ == other.margin_;
         }
 
         template<std::size_t... N>
         vbox_line next_impl(std::index_sequence<N...> indices) const {
             auto current = current_index(indices);
-            block_iterators next(((N != current) ? std::get<N>(lines) : std::next(std::get<N>(lines)))...);
+            block_iterators next(((N != current) ? std::get<N>(lines_) : std::next(std::get<N>(lines_)))...);
             return {
-                vbox,
-                (find_true((std::get<N>(next) != std::get<N>(ends))...) != current) ? vbox->margin : 0,
+                vbox_,
+                (find_true((std::get<N>(next) != std::get<N>(ends_))...) != current) ? vbox_->margin_ : 0,
                 next,
-                ends
+                ends_
             };
         }
 
         template<std::size_t... N>
         std::size_t current_index(std::index_sequence<N...>) const {
-            return find_true((std::get<N>(lines) != std::get<N>(ends))...);
+            return find_true((std::get<N>(lines_) != std::get<N>(ends_))...);
         }
 
-        VBox<Blocks...> const* vbox;
-        std::size_t margin = 0;
-        block_iterators lines, ends;
+        VBox<Blocks...> const* vbox_;
+        std::size_t margin_ = 0;
+        block_iterators lines_, ends_;
 
     public:
         vbox_line() = default;
@@ -781,12 +781,12 @@ namespace detail
     template<typename... Blocks>
     inline std::ostream& operator<<(std::ostream& stream, vbox_line<Blocks...> const& line) {
         auto fill = stream.fill();
-        auto width = line.vbox->size().x;
+        auto width = line.vbox_->size().x;
 
         stream << std::setfill(' ');
 
-        if (!line.margin)
-            output_vbox_line(stream, width, line.lines, line.ends, line.vbox->blocks,
+        if (!line.margin_)
+            output_vbox_line(stream, width, line.lines_, line.ends_, line.vbox_->blocks_,
                              std::make_index_sequence<sizeof...(Blocks)>());
         else
             stream << std::setw(width) << "";
@@ -808,16 +808,16 @@ public:
     using size_type = Size;
 
     explicit VBox(Blocks... blocks)
-        : blocks(std::move(blocks)...)
+        : blocks_(std::move(blocks)...)
         {}
 
     explicit VBox(std::size_t margin, Blocks... blocks)
-        : margin(margin), blocks(std::move(blocks)...)
+        : margin_(margin), blocks_(std::move(blocks)...)
         {}
 
     Size size() const {
         return size_impl(std::make_index_sequence<sizeof...(Blocks)>()) +
-            Size(0, margin*(sizeof...(Blocks) - 1));
+            Size(0, margin_*(sizeof...(Blocks) - 1));
     }
 
     const_iterator begin() const {
@@ -835,7 +835,7 @@ public:
 
     const_iterator cend() const {
         auto e = ends(std::make_index_sequence<sizeof...(Blocks)>());
-        return { { this, margin, e, e } };
+        return { { this, margin_, e, e } };
     }
 
 private:
@@ -846,32 +846,32 @@ private:
     template<std::size_t... N>
     Size size_impl(std::index_sequence<N...>) const {
         return {
-            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::size(std::get<N>(blocks)).x... }),
+            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::size(std::get<N>(blocks_)).x... }),
             detail::plus_fold(
-                detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                    ::size(std::get<N>(blocks)).y...)
+                detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                    ::size(std::get<N>(blocks_)).y...)
         };
     }
 
     template<std::size_t... N>
     typename value_type::block_iterators begins(std::index_sequence<N...>) const {
         return {
-            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::begin(std::get<N>(blocks))...
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::begin(std::get<N>(blocks_))...
         };
     }
 
     template<std::size_t... N>
     typename value_type::block_iterators ends(std::index_sequence<N...>) const {
         return {
-            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::end(std::get<N>(blocks))...
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::end(std::get<N>(blocks_))...
         };
     }
 
-    std::size_t margin = 1;
-    std::tuple<Blocks...> blocks;
+    std::size_t margin_ = 1;
+    std::tuple<Blocks...> blocks_;
 };
 
 template<typename Block, typename... Blocks>
@@ -911,7 +911,7 @@ namespace detail
         friend std::ostream& operator<< <Blocks...>(std::ostream&, hbox_line const&);
 
         hbox_line(HBox<Blocks...> const* hbox, std::size_t margin, block_iterators lines, block_iterators ends)
-            : hbox(hbox), margin(margin), lines(std::move(lines)), ends(std::move(ends))
+            : hbox_(hbox), margin_(margin), lines_(std::move(lines)), ends_(std::move(ends))
             {}
 
         hbox_line next() const {
@@ -919,22 +919,22 @@ namespace detail
         }
 
         bool equal(hbox_line const& other) const {
-            return lines == other.lines;
+            return lines_ == other.lines_;
         }
 
         template<std::size_t... N>
         hbox_line next_impl(std::index_sequence<N...>) const {
             return {
-                hbox,
-                margin,
-                { ((std::get<N>(lines) != std::get<N>(ends)) ? std::next(std::get<N>(lines)) : std::get<N>(lines))... },
-                ends
+                hbox_,
+                margin_,
+                { ((std::get<N>(lines_) != std::get<N>(ends_)) ? std::next(std::get<N>(lines_)) : std::get<N>(lines_))... },
+                ends_
             };
         }
 
-        HBox<Blocks...> const* hbox;
-        std::size_t margin = 0;
-        block_iterators lines, ends;
+        HBox<Blocks...> const* hbox_;
+        std::size_t margin_ = 0;
+        block_iterators lines_, ends_;
 
     public:
         hbox_line() = default;
@@ -973,7 +973,7 @@ namespace detail
     template<typename... Blocks>
     inline std::ostream& operator<<(std::ostream& stream, hbox_line<Blocks...> const& line) {
         auto fill = stream.fill();
-        return output_hbox_line(stream << std::setfill(' '), line.margin, line.lines, line.ends, line.hbox->blocks,
+        return output_hbox_line(stream << std::setfill(' '), line.margin_, line.lines_, line.ends_, line.hbox_->blocks_,
                                 std::make_index_sequence<sizeof...(Blocks) - 1>()) << std::setfill(fill);
     }
 } /* namespace detail */
@@ -991,16 +991,16 @@ public:
     using size_type = Size;
 
     explicit HBox(Blocks... blocks)
-        : blocks(std::move(blocks)...)
+        : blocks_(std::move(blocks)...)
         {}
 
     explicit HBox(std::size_t margin, Blocks... blocks)
-        : margin(margin), blocks(std::move(blocks)...)
+        : margin_(margin), blocks_(std::move(blocks)...)
         {}
 
     Size size() const {
         return size_impl(std::make_index_sequence<sizeof...(Blocks)>()) +
-            Size(margin*(sizeof...(Blocks) - 1), 0);
+            Size(margin_*(sizeof...(Blocks) - 1), 0);
     }
 
     const_iterator begin() const {
@@ -1012,13 +1012,13 @@ public:
     }
 
     const_iterator cbegin() const {
-        return { { this, margin, begins(std::make_index_sequence<sizeof...(Blocks)>()),
+        return { { this, margin_, begins(std::make_index_sequence<sizeof...(Blocks)>()),
                    ends(std::make_index_sequence<sizeof...(Blocks)>()) } };
     }
 
     const_iterator cend() const {
         auto e = ends(std::make_index_sequence<sizeof...(Blocks)>());
-        return { { this, margin, e, e } };
+        return { { this, margin_, e, e } };
     }
 
 private:
@@ -1028,31 +1028,31 @@ private:
     Size size_impl(std::index_sequence<N...>) const {
         return {
             detail::plus_fold(
-                detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                    ::size(std::get<N>(blocks)).x...),
-            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::size(std::get<N>(blocks)).y... }),
+                detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                    ::size(std::get<N>(blocks_)).x...),
+            std::max({ detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::size(std::get<N>(blocks_)).y... }),
         };
     }
 
     template<std::size_t... N>
     typename value_type::block_iterators begins(std::index_sequence<N...>) const {
         return {
-            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::begin(std::get<N>(blocks))...
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::begin(std::get<N>(blocks_))...
         };
     }
 
     template<std::size_t... N>
     typename value_type::block_iterators ends(std::index_sequence<N...>) const {
         return {
-            detail::block_traits<std::tuple_element_t<N, decltype(blocks)>>
-                ::end(std::get<N>(blocks))...
+            detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
+                ::end(std::get<N>(blocks_))...
         };
     }
 
-    std::size_t margin = 2;
-    std::tuple<Blocks...> blocks;
+    std::size_t margin_ = 2;
+    std::tuple<Blocks...> blocks_;
 };
 
 template<typename Block, typename... Blocks>
