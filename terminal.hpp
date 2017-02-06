@@ -393,8 +393,8 @@ public:
         return isatty(term_);
     }
 
-    bool supported(TerminalMode mode) const {
-        return int(mode) <= int(this->mode);
+    bool supported(TerminalMode m) const {
+        return int(m) <= int(mode);
     }
 
     Size size() const {
