@@ -8,22 +8,25 @@ Compile examples with C++14 support; link with `-lm`. The library tries to
 detect terminal capabilities automatically; a xterm-compatible terminal
 is recommended.
 
-A makefile is provided in the `examples` directory. A CMake project and
-a Code::Blocks project are also included in the `projects` directory
-for IDE support.
+A CMake build environment is provided which will build examples and
+optionally pack headers into a single header library.
 
 Please note that non-POSIX platforms (e.g. Windows) are currently not
 supported and compilation for them will fail.
 
-## Build script
+## Packing headers
 
-`build.py` is a python script which can pack all headers into a
+`pack.py` is a python script which can pack all headers into a
 single-header library. The following command will generate a
 header file (`plot_lib.hpp`) ready for inclusion in other projects.
 
 ```sh
-./build.py plot.hpp > plot_lib.hpp
+./pack.py plot.hpp > plot_lib.hpp
 ```
+
+The script will be run automatically by the CMake build system when the
+`BUILD_SINGLE_HEADER` option is set. A file named `plot.hpp` will be created
+in the build dir. A working Python 3 installation is required.
 
 ## Demo
 

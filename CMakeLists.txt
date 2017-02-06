@@ -23,6 +23,10 @@
 cmake_minimum_required(VERSION 3.1)
 project(plot CXX)
 
+if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+    message(SEND_ERROR "In-source builds are not allowed.")
+endif()
+
 set(CMAKE_CXX_STANDARD 14)
 
 set(HEADER_FILES
@@ -44,17 +48,19 @@ target_sources(plot INTERFACE ${HEADER_FILES})
 
 option(BUILD_SINGLE_HEADER "Pack all headers into a single header library" OFF)
 
-if (BUILD_SINGLE_HEADER)
+if(BUILD_SINGLE_HEADER)
     find_package(PythonInterp 3 REQUIRED)
+
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
-        COMMAND "${PYTHON_EXECUTABLE}" "build.py" "plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
+        COMMAND "${PYTHON_EXECUTABLE}" "pack.py" "plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         MAIN_DEPENDENCY plot
         COMMENT "Packing header files")
+
     add_custom_target(
         single-header ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp")
-endif ()
+endif()
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
