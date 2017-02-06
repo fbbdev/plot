@@ -1,5 +1,7 @@
 # C++ terminal plotting library
 
+[![Build Status](https://travis-ci.org/fbbdev/plot.svg?branch=master)](https://travis-ci.org/fbbdev/plot)
+
 ***WARNING: This library is a work in progress!***
 
 Header-only.
