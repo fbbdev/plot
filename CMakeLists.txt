@@ -1,6 +1,6 @@
 # The MIT License
 #
-# Copyright (c) 2016 Fabio Massaioli
+# Copyright (c) 2017 Fabio Massaioli
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,44 +20,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-default: all
+cmake_minimum_required(VERSION 3.1)
+project(plot CXX)
 
-.PHONY: all clean
+set(CMAKE_CXX_STANDARD 14)
 
-CXX=g++
-override CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic
-LIBS = -lm
+set(HEADER_FILES
+    plot.hpp
+    braille.hpp
+    color.hpp
+    layout.hpp
+    point.hpp
+    real_canvas.hpp
+    rect.hpp
+    string_view.hpp
+    terminal.hpp
+    utils.hpp)
 
-ifdef DEBUG
-	override CXXFLAGS += -g -O0
-else
-	override CXXFLAGS += -flto -Ofast -DNDEBUG
-endif
+string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "${HEADER_FILES}")
 
-headers := $(wildcard ../*.hpp)
+add_library(plot INTERFACE)
+target_sources(plot INTERFACE ${HEADER_FILES})
 
-all: build/terminal build/canvas build/real_canvas build/frame build/animation build/boxes
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-build:
-	mkdir -p build
-
-build/terminal: terminal.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/terminal terminal.cpp $(LIBS)
-
-build/canvas: canvas.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/canvas canvas.cpp $(LIBS)
-
-build/real_canvas: real_canvas.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/real_canvas real_canvas.cpp $(LIBS)
-
-build/frame: frame.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/frame frame.cpp $(LIBS)
-
-build/animation: animation.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/animation animation.cpp $(LIBS)
-
-build/boxes: boxes.cpp $(headers) | build
-	$(CXX) $(CXXFLAGS) -o build/boxes boxes.cpp $(LIBS)
-
-clean:
-	rm -rf build
+add_subdirectory(examples)

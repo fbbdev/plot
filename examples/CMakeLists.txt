@@ -20,31 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-cmake_minimum_required(VERSION 3.1)
-project(plot CXX)
+add_executable(terminal terminal.cpp)
+add_executable(canvas canvas.cpp)
+add_executable(real_canvas real_canvas.cpp)
+add_executable(frame frame.cpp)
+add_executable(animation animation.cpp)
+add_executable(boxes boxes.cpp)
 
-set(CMAKE_CXX_STANDARD 14)
+set(LIBS plot)
 
-set(HEADER_FILES
-        ../braille.hpp
-        ../color.hpp
-        ../layout.hpp
-        ../point.hpp
-        ../real_canvas.hpp
-        ../rect.hpp
-        ../string_view.hpp
-        ../terminal.hpp
-        ../utils.hpp)
-
-include_directories(..)
-add_executable(terminal ../examples/terminal.cpp ${HEADER_FILES})
-add_executable(canvas ../examples/canvas.cpp ${HEADER_FILES})
-add_executable(real_canvas ../examples/real_canvas.cpp ${HEADER_FILES})
-add_executable(frame ../examples/frame.cpp ${HEADER_FILES})
-add_executable(animation ../examples/animation.cpp ${HEADER_FILES})
-add_executable(boxes ../examples/boxes.cpp ${HEADER_FILES})
-
-set(LIBS m)
+if(UNIX)
+    list(APPEND LIBS m)
+endif()
 
 target_link_libraries(terminal ${LIBS})
 target_link_libraries(canvas ${LIBS})
