@@ -42,6 +42,20 @@ string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "$
 add_library(plot INTERFACE)
 target_sources(plot INTERFACE ${HEADER_FILES})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+option(BUILD_SINGLE_HEADER "Pack all headers into a single header library" OFF)
+
+if (BUILD_SINGLE_HEADER)
+    find_package(PythonInterp 3 REQUIRED)
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
+        COMMAND "${PYTHON_EXECUTABLE}" "build.py" "plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        MAIN_DEPENDENCY plot
+        COMMENT "Packing header files")
+    add_custom_target(
+        single-header ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp")
+endif ()
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(examples)
