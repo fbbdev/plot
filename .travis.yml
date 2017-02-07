@@ -26,4 +26,4 @@ cache:
   directories:
     - $HOME/deps
 script:
-  - mkdir build && cd build && cmake -DBUILD_SINGLE_HEADER=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -Werror" .. && make -j2
+  - mkdir build && cd build && cmake -DBUILD_SINGLE_HEADER=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -Wshadow -Werror" .. && make -j2
