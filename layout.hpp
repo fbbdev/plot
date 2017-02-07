@@ -732,11 +732,11 @@ namespace detail
         template<std::size_t... N>
         vbox_line next_impl(std::index_sequence<N...> indices) const {
             auto current = current_index(indices);
-            block_iterators next(((N != current) ? std::get<N>(lines_) : std::next(std::get<N>(lines_)))...);
+            block_iterators nxt(((N != current) ? std::get<N>(lines_) : std::next(std::get<N>(lines_)))...);
             return {
                 vbox_,
-                (find_true((std::get<N>(next) != std::get<N>(ends_))...) != current) ? vbox_->margin_ : 0,
-                next,
+                (find_true((std::get<N>(nxt) != std::get<N>(ends_))...) != current) ? vbox_->margin_ : 0,
+                nxt,
                 ends_
             };
         }

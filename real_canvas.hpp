@@ -53,8 +53,8 @@ public:
         {}
 
     template<typename... Args>
-    RealCanvas(Rectf bounds, Args&&... args)
-        : bounds_(bounds), canvas_(std::forward<Args>(args)...)
+    RealCanvas(Rectf bnds, Args&&... args)
+        : bounds_(bnds), canvas_(std::forward<Args>(args)...)
         {}
 
     RealCanvas(RealCanvas const&) = default;
@@ -72,8 +72,8 @@ public:
         return bounds_;
     }
 
-    void bounds(Rectf bounds) {
-        bounds_ = bounds;
+    void bounds(Rectf bnds) {
+        bounds_ = bnds;
     }
 
     Sizef size() const {
@@ -92,15 +92,15 @@ public:
     }
 
     template<typename Size>
-    RealCanvas& resize(Size&& size) {
-        canvas_.resize(std::forward<Size>(size));
+    RealCanvas& resize(Size&& sz) {
+        canvas_.resize(std::forward<Size>(sz));
         return *this;
     }
 
     template<typename Size>
-    RealCanvas& resize(Rectf bounds, Size&& size) {
-        canvas_.resize(std::forward<Size>(size));
-        bounds_ = bounds;
+    RealCanvas& resize(Rectf bnds, Size&& sz) {
+        canvas_.resize(std::forward<Size>(sz));
+        bounds_ = bnds;
         return *this;
     }
 
@@ -217,11 +217,11 @@ public:
     }
 
     typename Canvas::size_type map_size(Sizef const& s) const {
-        auto size = this->size();
+        auto sz = this->size();
         auto canvas_bounds = canvas_.size();
         return {
-            std::lround(s.x/size.x * canvas_bounds.x),
-            std::lround(s.y/size.y * canvas_bounds.y)
+            std::lround(s.x/sz.x * canvas_bounds.x),
+            std::lround(s.y/sz.y * canvas_bounds.y)
         };
     }
 
@@ -238,11 +238,11 @@ public:
     }
 
     Sizef unmap_size(typename Canvas::size_type const& s) const {
-        auto size = this->size();
+        auto sz = this->size();
         auto canvas_bounds = canvas_.size();
         return {
-            float(s.x)/canvas_bounds.x * size.x,
-            float(s.y)/canvas_bounds.y * size.y
+            float(s.x)/canvas_bounds.x * sz.x,
+            float(s.y)/canvas_bounds.y * sz.y
         };
     }
 

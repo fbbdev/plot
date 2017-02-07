@@ -62,8 +62,8 @@ struct GenericRect
         : p1(point1), p2(point2)
         {}
 
-    constexpr GenericRect(GenericSize<T> const& size)
-        : p1(), p2(size)
+    constexpr GenericRect(GenericSize<T> const& sz)
+        : p1(), p2(sz)
         {}
 
     GenericRect sorted() const {

@@ -448,8 +448,8 @@ public:
     // Common control sequences
     // The following methods return IO manipulators for std::ostream
 
-    auto title(string_view title) const {
-         return detail::make_ansi_manip_wrapper(mode, ansi::title(title));
+    auto title(string_view t) const {
+         return detail::make_ansi_manip_wrapper(mode, ansi::title(t));
     }
 
     auto reset() const {
