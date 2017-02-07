@@ -50,8 +50,8 @@ constexpr Color operator/(float const& lhs, Color const& rhs);
 struct Color {
     constexpr Color() : r(0), g(0), b(0), a(0) {}
 
-    constexpr Color(float r, float g, float b, float a = 1.0f)
-        : r(r), g(g), b(b), a(a)
+    constexpr Color(float red, float green, float blue, float alpha = 1.0f)
+        : r(red), g(green), b(blue), a(alpha)
         {}
 
     constexpr Color(Color32 c, std::uint8_t white = 255, std::uint8_t opaque = 255)

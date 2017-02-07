@@ -59,17 +59,17 @@ namespace detail { namespace braille
     struct block_t {
         constexpr block_t() = default;
 
-        constexpr block_t(Color color, bool px00, bool px01, bool px02, bool px03,
-                                       bool px10, bool px11, bool px12, bool px13)
-            : color(color),
+        constexpr block_t(Color c, bool px00, bool px01, bool px02, bool px03,
+                                   bool px10, bool px11, bool px12, bool px13)
+            : color(c),
               pixels(pixel_codes[0][0]*px00 | pixel_codes[0][1]*px01 |
                      pixel_codes[0][2]*px02 | pixel_codes[0][3]*px03 |
                      pixel_codes[1][0]*px10 | pixel_codes[1][1]*px11 |
                      pixel_codes[1][2]*px12 | pixel_codes[1][3]*px13)
             {}
 
-        constexpr block_t(Color color, std::uint8_t pixels = 0)
-            : color(color), pixels(pixels)
+        constexpr block_t(Color c, std::uint8_t px = 0)
+            : color(c), pixels(px)
             {}
 
         block_t& clear() {
@@ -322,29 +322,29 @@ public:
         return clear();
     }
 
-    BrailleCanvas& clear(Rect rect) {
-        rect = rect.sorted();
+    BrailleCanvas& clear(Rect rct) {
+        rct = rct.sorted();
         Rect block_rect{
-            { rect.p1.x/2, rect.p1.y/4 },
-            { utils::max(1l, rect.p2.x/2 + (rect.p2.x%2)),
-              utils::max(1l, rect.p2.y/4 + (rect.p2.y%4 != 0)) }
+            { rct.p1.x/2, rct.p1.y/4 },
+            { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
+              utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
         };
 
-        rect.p2 += Point(1, 1);
+        rct.p2 += Point(1, 1);
 
         for (auto line = block_rect.p1.y; line < block_rect.p2.y; ++line) {
             auto ybase = 4*line;
             for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
                 auto xbase = 2*col;
                 detail::braille::block_t src({ 0, 0, 0, 0 },
-                    rect.contains({ xbase, ybase }),
-                    rect.contains({ xbase, ybase+1 }),
-                    rect.contains({ xbase, ybase+2 }),
-                    rect.contains({ xbase, ybase+3 }),
-                    rect.contains({ xbase+1, ybase }),
-                    rect.contains({ xbase+1, ybase+1 }),
-                    rect.contains({ xbase+1, ybase+2 }),
-                    rect.contains({ xbase+1, ybase+3 }));
+                    rct.contains({ xbase, ybase }),
+                    rct.contains({ xbase, ybase+1 }),
+                    rct.contains({ xbase, ybase+2 }),
+                    rct.contains({ xbase, ybase+3 }),
+                    rct.contains({ xbase+1, ybase }),
+                    rct.contains({ xbase+1, ybase+1 }),
+                    rct.contains({ xbase+1, ybase+2 }),
+                    rct.contains({ xbase+1, ybase+3 }));
                 block(line, col) &= ~src;
             }
         }
@@ -353,10 +353,10 @@ public:
     }
 
     template<typename Fn>
-    BrailleCanvas& stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
+    BrailleCanvas& stroke(Color const& color, Rect rct, Fn&& fn, TerminalOp op = TerminalOp::Over);
 
     template<typename Fn>
-    BrailleCanvas& fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op = TerminalOp::Over);
+    BrailleCanvas& fill(Color const& color, Rect rct, Fn&& fn, TerminalOp op = TerminalOp::Over);
 
     BrailleCanvas& dot(Color const& color, Point p, TerminalOp op = TerminalOp::Over) {
         if (Rect({}, size()).contains(p)) {
@@ -398,60 +398,60 @@ public:
         return path(color, points.begin(), points.end(), op);
     }
 
-    BrailleCanvas& rect(Color const& color, Rect const& rect, TerminalOp op = TerminalOp::Over) {
+    BrailleCanvas& rect(Color const& color, Rect const& rct, TerminalOp op = TerminalOp::Over) {
         return push()
-              .line(color, rect.p1, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
-              .line(color, rect.p1, { rect.p1.x, rect.p2.y }, TerminalOp::Over)
-              .line(color, rect.p2, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
-              .line(color, rect.p2, { rect.p1.x, rect.p2.y }, TerminalOp::Over)
+              .line(color, rct.p1, { rct.p2.x, rct.p1.y }, TerminalOp::Over)
+              .line(color, rct.p1, { rct.p1.x, rct.p2.y }, TerminalOp::Over)
+              .line(color, rct.p2, { rct.p2.x, rct.p1.y }, TerminalOp::Over)
+              .line(color, rct.p2, { rct.p1.x, rct.p2.y }, TerminalOp::Over)
               .pop(op);
     }
 
-    BrailleCanvas& rect(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
-        rect = rect.sorted();
+    BrailleCanvas& rect(Color const& stroke_color, Color const& fill_color, Rect rct, TerminalOp op = TerminalOp::Over) {
+        rct = rct.sorted();
         return push()
-              .line(stroke, rect.p1, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
-              .line(stroke, rect.p1, { rect.p1.x, rect.p2.y }, TerminalOp::Over)
-              .line(stroke, rect.p2, { rect.p2.x, rect.p1.y }, TerminalOp::Over)
-              .line(stroke, rect.p2, { rect.p1.x, rect.p2.y }, TerminalOp::Over)
-              .fill(fill, rect, [r=Rect(rect.p1 + Point(1, 1), rect.p2)](Point p) {
+              .line(stroke_color, rct.p1, { rct.p2.x, rct.p1.y }, TerminalOp::Over)
+              .line(stroke_color, rct.p1, { rct.p1.x, rct.p2.y }, TerminalOp::Over)
+              .line(stroke_color, rct.p2, { rct.p2.x, rct.p1.y }, TerminalOp::Over)
+              .line(stroke_color, rct.p2, { rct.p1.x, rct.p2.y }, TerminalOp::Over)
+              .fill(fill_color, rct, [r=Rect(rct.p1 + Point(1, 1), rct.p2)](Point p) {
                   return r.contains(p);
               }, TerminalOp::Over)
               .pop(op);
     }
 
-    BrailleCanvas& ellipse(Color const& color, Rect rect, TerminalOp op = TerminalOp::Over) {
-        rect = rect.sorted();
-        auto size = rect.size() + Point(1, 1);
+    BrailleCanvas& ellipse(Color const& color, Rect rct, TerminalOp op = TerminalOp::Over) {
+        rct = rct.sorted();
+        auto size = rct.size() + Point(1, 1);
 
         float x_fac = 2.0f/size.x;
         Coord y_fac = size.y/2 - (!(size.y % 2)),
-              cx = rect.p1.x + (size.x/2) - (!(size.x % 2)),
-              cy = rect.p1.y + y_fac;
+              cx = rct.p1.x + (size.x/2) - (!(size.x % 2)),
+              cy = rct.p1.y + y_fac;
 
         return push()
-              .stroke(color, { rect.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rect.p1.x](Coord x) {
+              .stroke(color, { rct.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rct.p1.x](Coord x) {
                   auto x_over_a = ((x - x0) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x - x0) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy - std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(color, { { cx + 1, rect.p1.y }, { rect.p2.x, cy } }, [x_fac,y_fac,cy,x1=rect.p2.x](Coord x) {
+              .stroke(color, { { cx + 1, rct.p1.y }, { rct.p2.x, cy } }, [x_fac,y_fac,cy,x1=rct.p2.x](Coord x) {
                   auto x_over_a = ((x1 - x) * x_fac) - 1.0f,
                        next_x_over_a = ((x1 - x + 1) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy - std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(color, { { rect.p1.x, cy + 1 }, { cx, rect.p2.y } }, [x_fac,y_fac,cy,x0=rect.p1.x](Coord x) {
+              .stroke(color, { { rct.p1.x, cy + 1 }, { cx, rct.p2.y } }, [x_fac,y_fac,cy,x0=rct.p1.x](Coord x) {
                   auto x_over_a = ((x - x0) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x - x0) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy + std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(color, { { cx + 1, cy + 1 }, rect.p2 }, [x_fac,y_fac,cy,x1=rect.p2.x](Coord x) {
+              .stroke(color, { { cx + 1, cy + 1 }, rct.p2 }, [x_fac,y_fac,cy,x1=rct.p2.x](Coord x) {
                   auto x_over_a = ((x1 - x) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x1 - x) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
@@ -461,60 +461,60 @@ public:
               .pop(op);
     }
 
-    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Rect rect, TerminalOp op = TerminalOp::Over) {
-        rect = rect.sorted();
-        auto size = rect.size() + Point(1, 1);
+    BrailleCanvas& ellipse(Color const& stroke_color, Color const& fill_color, Rect rct, TerminalOp op = TerminalOp::Over) {
+        rct = rct.sorted();
+        auto size = rct.size() + Point(1, 1);
 
         float x_fac = 2.0f/size.x;
         Coord y_fac = size.y/2 - (!(size.y % 2)),
-              cx = rect.p1.x + (size.x/2) - (!(size.x % 2)),
-              cy = rect.p1.y + y_fac;
+              cx = rct.p1.x + (size.x/2) - (!(size.x % 2)),
+              cy = rct.p1.y + y_fac;
 
         return push()
-              .stroke(stroke, { rect.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rect.p1.x](Coord x) {
+              .stroke(stroke_color, { rct.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rct.p1.x](Coord x) {
                   auto x_over_a = ((x - x0) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x - x0) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy - std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(stroke, { { cx + 1, rect.p1.y }, { rect.p2.x, cy } }, [x_fac,y_fac,cy,x1=rect.p2.x](Coord x) {
+              .stroke(stroke_color, { { cx + 1, rct.p1.y }, { rct.p2.x, cy } }, [x_fac,y_fac,cy,x1=rct.p2.x](Coord x) {
                   auto x_over_a = ((x1 - x) * x_fac) - 1.0f,
                        next_x_over_a = ((x1 - x + 1) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy - std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(stroke, { { rect.p1.x, cy + 1 }, { cx, rect.p2.y } }, [x_fac,y_fac,cy,x0=rect.p1.x](Coord x) {
+              .stroke(stroke_color, { { rct.p1.x, cy + 1 }, { cx, rct.p2.y } }, [x_fac,y_fac,cy,x0=rct.p1.x](Coord x) {
                   auto x_over_a = ((x - x0) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x - x0) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy + std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .stroke(stroke, { { cx + 1, cy + 1 }, rect.p2 }, [x_fac,y_fac,cy,x1=rect.p2.x](Coord x) {
+              .stroke(stroke_color, { { cx + 1, cy + 1 }, rct.p2 }, [x_fac,y_fac,cy,x1=rct.p2.x](Coord x) {
                   auto x_over_a = ((x1 - x) * x_fac) - 1.0f,
                        next_x_over_a = ((1 + x1 - x) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a)),
                         end = cy + std::lround(y_fac*std::sqrt(1 - next_x_over_a*next_x_over_a));
                   return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
               }, TerminalOp::Over)
-              .fill(fill, { rect.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rect.p1.x](Point p) {
+              .fill(fill_color, { rct.p1, { cx, cy } }, [x_fac,y_fac,cy,x0=rct.p1.x](Point p) {
                   auto x_over_a = ((p.x - x0) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a));
                   return p.y > base;
               }, TerminalOp::Over)
-              .fill(fill, { { cx + 1, rect.p1.y }, { rect.p2.x, cy } }, [x_fac,y_fac,cy,x1=rect.p2.x](Point p) {
+              .fill(fill_color, { { cx + 1, rct.p1.y }, { rct.p2.x, cy } }, [x_fac,y_fac,cy,x1=rct.p2.x](Point p) {
                   auto x_over_a = ((x1 - p.x) * x_fac) - 1.0f;
                   Coord base = cy - std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a));
                   return p.y > base;
               }, TerminalOp::Over)
-              .fill(fill, { { rect.p1.x, cy + 1 }, { cx, rect.p2.y } }, [x_fac,y_fac,cy,x0=rect.p1.x](Point p) {
+              .fill(fill_color, { { rct.p1.x, cy + 1 }, { cx, rct.p2.y } }, [x_fac,y_fac,cy,x0=rct.p1.x](Point p) {
                   auto x_over_a = ((p.x - x0) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a));
                   return p.y < base;
               }, TerminalOp::Over)
-              .fill(fill, { { cx + 1, cy + 1 }, rect.p2 }, [x_fac,y_fac,cy,x1=rect.p2.x](Point p) {
+              .fill(fill_color, { { cx + 1, cy + 1 }, rct.p2 }, [x_fac,y_fac,cy,x1=rct.p2.x](Point p) {
                   auto x_over_a = ((x1 - p.x) * x_fac) - 1.0f;
                   Coord base = cy + std::lround(y_fac*std::sqrt(1 - x_over_a*x_over_a));
                   return p.y < base;
@@ -522,12 +522,12 @@ public:
               .pop(op);
     }
 
-    BrailleCanvas& ellipse(Color const& stroke, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
-        return ellipse(stroke, { center - semiaxes, center + semiaxes }, op);
+    BrailleCanvas& ellipse(Color const& stroke_color, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
+        return ellipse(stroke_color, { center - semiaxes, center + semiaxes }, op);
     }
 
-    BrailleCanvas& ellipse(Color const& stroke, Color const& fill, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
-        return ellipse(stroke, fill, { center - semiaxes, center + semiaxes }, op);
+    BrailleCanvas& ellipse(Color const& stroke_color, Color const& fill_color, Point const& center, Size const& semiaxes, TerminalOp op = TerminalOp::Over) {
+        return ellipse(stroke_color, fill_color, { center - semiaxes, center + semiaxes }, op);
     }
 
 private:
@@ -560,23 +560,23 @@ private:
 };
 
 template<typename Fn>
-BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
-    rect = rect.sorted();
-    rect.p2 += Point(1, 1);
-    rect = rect.clamp(size());
+BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rct, Fn&& fn, TerminalOp op) {
+    rct = rct.sorted();
+    rct.p2 += Point(1, 1);
+    rct = rct.clamp(size());
     Rect block_rect{
-        { rect.p1.x/2, rect.p1.y/4 },
-        { utils::max(1l, rect.p2.x/2 + (rect.p2.x%2)),
-          utils::max(1l, rect.p2.y/4 + (rect.p2.y%4 != 0)) }
+        { rct.p1.x/2, rct.p1.y/4 },
+        { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
+          utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
     };
 
     for (auto line = block_rect.p1.y; line < block_rect.p2.y; ++line) {
-        auto line_start = utils::clamp(4*line, rect.p1.y, rect.p2.y),
-             line_end = utils::clamp(4*line + 4, rect.p1.y, rect.p2.y);
+        auto line_start = utils::clamp(4*line, rct.p1.y, rct.p2.y),
+             line_end = utils::clamp(4*line + 4, rct.p1.y, rct.p2.y);
 
         for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
-            auto col_start = utils::clamp(2*col, rect.p1.x, rect.p2.x),
-                 col_end = utils::clamp(2*col + 2, rect.p1.x, rect.p2.x);
+            auto col_start = utils::clamp(2*col, rct.p1.x, rct.p2.x),
+                 col_end = utils::clamp(2*col + 2, rct.p1.x, rct.p2.x);
 
             detail::braille::block_t src(color);
 
@@ -601,18 +601,18 @@ BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rect, Fn&& fn, Ter
 }
 
 template<typename Fn>
-BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rect, Fn&& fn, TerminalOp op) {
-    rect = rect.sorted();
-    rect.p2 += Point(1, 1);
-    rect = rect.clamp(size());
+BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rct, Fn&& fn, TerminalOp op) {
+    rct = rct.sorted();
+    rct.p2 += Point(1, 1);
+    rct = rct.clamp(size());
     Rect block_rect{
-        { rect.p1.x/2, rect.p1.y/4 },
-        { utils::max(1l, rect.p2.x/2 + (rect.p2.x%2)),
-          utils::max(1l, rect.p2.y/4 + (rect.p2.y%4 != 0)) }
+        { rct.p1.x/2, rct.p1.y/4 },
+        { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
+          utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
     };
 
-    auto set = [rect,&fn](Point p) {
-        return rect.contains(p) && fn(p);
+    auto set = [rct,&fn](Point p) {
+        return rct.contains(p) && fn(p);
     };
 
     for (auto line = block_rect.p1.y; line < block_rect.p2.y; ++line) {

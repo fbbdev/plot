@@ -61,7 +61,6 @@ int main() {
     auto y0 = rect.p1.y, A = size.y/2, N = size.x;
     float f = 2.0f;
 
-
     auto sin = [N,f](float t, float x) {
         return std::sin(2*3.141592f*f*(t + x/N));
     };
@@ -79,15 +78,16 @@ int main() {
         return sin(t, x) * cos(t, x);
     };
 
-    auto stroke_fn = [y0,A](auto const& fn, float t) {
-        return [y0,A,fn,t](float x) {
-            Coord base = y0 + A - std::lround(A*fn(t, x)),
-                  end  = y0 + A - std::lround(A*fn(t, x + 1));
+    auto stroke_fn = [y0,A](auto const& fn, float t_) { // XXX: t_ due to a bug in GCC's -Wshadow
+        return [y0,A,fn,t_](float x) {
+            Coord base = y0 + A - std::lround(A*fn(t_, x)),
+                  end  = y0 + A - std::lround(A*fn(t_, x + 1));
             return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
         };
     };
 
     float t = 0.0f;
+
     while (true) {
         waves.clear()
              .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))

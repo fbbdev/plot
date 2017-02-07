@@ -59,8 +59,8 @@ struct GenericPoint
 
     constexpr GenericPoint() = default;
 
-    constexpr GenericPoint(T x, T y)
-        : x(x), y(y)
+    constexpr GenericPoint(T coord_x, T coord_y)
+        : x(coord_x), y(coord_y)
         {}
 
     constexpr T distance(GenericPoint const& other) const {

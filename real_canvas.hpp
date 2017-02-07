@@ -114,14 +114,14 @@ public:
         return *this;
     }
 
-    RealCanvas& clear(Rectf rect) {
-        canvas_.clear(map(rect));
+    RealCanvas& clear(Rectf rct) {
+        canvas_.clear(map(rct));
         return *this;
     }
 
     template<typename Fn, typename... Args>
-    RealCanvas& stroke(Color const& color, Rectf const& rect, Fn&& fn, Args&&... args) {
-        canvas_.stroke(color, map(rect), [this,&fn](typename Canvas::coord_type x) {
+    RealCanvas& stroke(Color const& color, Rectf const& rct, Fn&& fn, Args&&... args) {
+        canvas_.stroke(color, map(rct), [this,&fn](typename Canvas::coord_type x) {
             auto real_bounds = fn(unmap(Point(x, 0)).x, unmap(Point(x + 1, 0)).x);
             auto base = map(Pointf(0, real_bounds.first)).y,
                  end = map(Pointf(0, real_bounds.second)).y;
@@ -132,8 +132,8 @@ public:
     }
 
     template<typename Fn, typename... Args>
-    RealCanvas& fill(Color const& color, Rectf const& rect, Fn&& fn, Args&&... args) {
-        canvas_.fill(color, map(rect), [this,&fn](typename Canvas::point_type p) {
+    RealCanvas& fill(Color const& color, Rectf const& rct, Fn&& fn, Args&&... args) {
+        canvas_.fill(color, map(rct), [this,&fn](typename Canvas::point_type p) {
             return fn(unmap(p));
         }, std::forward<Args>(args)...);
         return *this;
@@ -169,26 +169,26 @@ public:
     }
 
     template<typename... Args>
-    RealCanvas& rect(Color const& color, Rectf const& rect, Args&&... args) {
-        canvas_.rect(color, map(rect), std::forward<Args>(args)...);
+    RealCanvas& rect(Color const& color, Rectf const& rct, Args&&... args) {
+        canvas_.rect(color, map(rct), std::forward<Args>(args)...);
         return *this;
     }
 
     template<typename... Args>
-    RealCanvas& rect(Color const& stroke, Color const& fill, Rectf const& rect, Args&&... args) {
-        canvas_.rect(stroke, fill, map(rect), std::forward<Args>(args)...);
+    RealCanvas& rect(Color const& stroke_color, Color const& fill_color, Rectf const& rct, Args&&... args) {
+        canvas_.rect(stroke_color, fill_color, map(rct), std::forward<Args>(args)...);
         return *this;
     }
 
     template<typename... Args>
-    RealCanvas& ellipse(Color const& color, Rectf const& rect, Args&&... args) {
-        canvas_.ellipse(color, map(rect), std::forward<Args>(args)...);
+    RealCanvas& ellipse(Color const& color, Rectf const& rct, Args&&... args) {
+        canvas_.ellipse(color, map(rct), std::forward<Args>(args)...);
         return *this;
     }
 
     template<typename... Args>
-    RealCanvas& ellipse(Color const& stroke, Color const& fill, Rectf const& rect, Args&&... args) {
-        canvas_.ellipse(stroke, fill, map(rect), std::forward<Args>(args)...);
+    RealCanvas& ellipse(Color const& stroke_color, Color const& fill_color, Rectf const& rct, Args&&... args) {
+        canvas_.ellipse(stroke_color, fill_color, map(rct), std::forward<Args>(args)...);
         return *this;
     }
 
@@ -199,8 +199,8 @@ public:
     }
 
     template<typename... Args>
-    RealCanvas& ellipse(Color const& color, Color const& fill, Pointf center, Sizef semiaxes, Args&&... args) {
-        canvas_.ellipse(color, fill, map(center), map_size(semiaxes), std::forward<Args>(args)...);
+    RealCanvas& ellipse(Color const& color, Color const& fill_color, Pointf center, Sizef semiaxes, Args&&... args) {
+        canvas_.ellipse(color, fill_color, map(center), map_size(semiaxes), std::forward<Args>(args)...);
         return *this;
     }
 

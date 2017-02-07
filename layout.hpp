@@ -394,8 +394,8 @@ public:
     using difference_type = typename const_iterator::difference_type;
     using size_type = Size;
 
-    explicit Margin(Block block_)
-        : block_(std::move(block_))
+    explicit Margin(Block block)
+        : block_(std::move(block))
         {}
 
     explicit Margin(std::size_t margin, Block block)

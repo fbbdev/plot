@@ -101,11 +101,11 @@ namespace ansi
 
         inline std::uint8_t find_color256(plot::Color c) {
             using utils::clamp;
-            auto ansi_color = find_palette_entry(c);
+            auto ansi_clr = find_palette_entry(c);
             auto color = c.color32(5);
             std::uint8_t gray = std::lround(clamp(0.3f*c.r + 0.59f*c.g + 0.11f*c.b, 0.0f, 1.0f)*23);
 
-            auto ansi_dist = ansi_color.first.distance(c);
+            auto ansi_dist = ansi_clr.first.distance(c);
             auto color_dist = plot::Color(color, 5).distance(c);
             auto gray_dist = plot::Color({ gray, gray, gray, 255 }, 23).distance(c);
 
@@ -114,7 +114,7 @@ namespace ansi
             } else if (gray_dist <= ansi_dist) {
                 return gray + 0xe8;
             } else {
-                return ansi_color.second.first + 8*ansi_color.second.second;
+                return ansi_clr.second.first + 8*ansi_clr.second.second;
             }
         }
 
@@ -383,10 +383,10 @@ using Terminal = int;
 class TerminalInfo {
 public:
     explicit TerminalInfo(Terminal term = STDOUT_FILENO,
-                          TerminalMode mode = TerminalMode::None,
-                          Color foreground_color = { 0.9f, 0.9f, 0.9f, 1 },
-                          Color background_color = { 0, 0, 0, 1 })
-        : mode(mode), foreground_color(foreground_color), background_color(background_color), term_(term)
+                          TerminalMode tmode = TerminalMode::None,
+                          Color fgcolor = { 0.9f, 0.9f, 0.9f, 1 },
+                          Color bgcolor = { 0, 0, 0, 1 })
+        : mode(tmode), foreground_color(fgcolor), background_color(bgcolor), term_(term)
         {}
 
     bool is_terminal() const {
@@ -528,8 +528,8 @@ namespace detail
 {
     struct tcsetattr_guard
     {
-        tcsetattr_guard(Terminal term, struct termios old, struct termios newtermios)
-            : term(term), old(old), new_(newtermios)
+        tcsetattr_guard(Terminal t, struct termios oldtermios, struct termios newtermios)
+            : term(t), old(oldtermios), new_(newtermios)
             {}
 
         ~tcsetattr_guard() {
