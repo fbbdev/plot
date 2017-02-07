@@ -401,7 +401,7 @@ public:
         if (!is_terminal())
             return {};
 
-        struct winsize ws = {};
+        struct winsize ws;
 
         if (ioctl(term_, TIOCGWINSZ, &ws))
             return {};
@@ -625,7 +625,7 @@ TerminalInfo& TerminalInfo::detect() {
 
 template<typename>
 std::string TerminalInfo::query(string_view query, string_view terminator) {
-    struct termios oldAttrs = {};
+    struct termios oldAttrs;
     if (tcgetattr(STDOUT_FILENO, &oldAttrs))
         return std::string();
 

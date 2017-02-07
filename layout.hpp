@@ -856,7 +856,7 @@ private:
 
     template<std::size_t... N>
     typename value_type::block_iterators begins(std::index_sequence<N...>) const {
-        return {
+        return typename value_type::block_iterators{
             detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
                 ::begin(std::get<N>(blocks_))...
         };
@@ -864,7 +864,7 @@ private:
 
     template<std::size_t... N>
     typename value_type::block_iterators ends(std::index_sequence<N...>) const {
-        return {
+        return typename value_type::block_iterators{
             detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
                 ::end(std::get<N>(blocks_))...
         };
@@ -927,7 +927,8 @@ namespace detail
             return {
                 hbox_,
                 margin_,
-                { ((std::get<N>(lines_) != std::get<N>(ends_)) ? std::next(std::get<N>(lines_)) : std::get<N>(lines_))... },
+                block_iterators{
+                    ((std::get<N>(lines_) != std::get<N>(ends_)) ? std::next(std::get<N>(lines_)) : std::get<N>(lines_))... },
                 ends_
             };
         }
@@ -1037,7 +1038,7 @@ private:
 
     template<std::size_t... N>
     typename value_type::block_iterators begins(std::index_sequence<N...>) const {
-        return {
+        return typename value_type::block_iterators{
             detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
                 ::begin(std::get<N>(blocks_))...
         };
@@ -1045,7 +1046,7 @@ private:
 
     template<std::size_t... N>
     typename value_type::block_iterators ends(std::index_sequence<N...>) const {
-        return {
+        return typename value_type::block_iterators{
             detail::block_traits<std::tuple_element_t<N, decltype(blocks_)>>
                 ::end(std::get<N>(blocks_))...
         };
