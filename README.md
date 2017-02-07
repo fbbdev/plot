@@ -6,8 +6,9 @@
 
 Header-only.
 
-Compile examples with C++14 support; link with `-lm`. The library tries to
-detect terminal capabilities automatically; a xterm-compatible terminal
+Compile examples with C++14 support; link with `-lm` (gcc/libstdc++ >= 4.9
+required; tested with gcc 4.9, gcc 6.0 and clang 3.9). The library tries
+to detect terminal capabilities automatically; a xterm-compatible terminal
 is recommended.
 
 A CMake build environment is provided which will build examples and
