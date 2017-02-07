@@ -518,7 +518,7 @@ public:
 
 private:
     template<typename = void>
-    std::string query(string_view query, string_view terminator);
+    std::string query(string_view cmd, string_view terminator);
 
     Terminal term_;
 };
@@ -624,9 +624,9 @@ TerminalInfo& TerminalInfo::detect() {
 }
 
 template<typename>
-std::string TerminalInfo::query(string_view query, string_view terminator) {
+std::string TerminalInfo::query(string_view cmd, string_view terminator) {
     struct termios oldAttrs;
-    if (tcgetattr(STDOUT_FILENO, &oldAttrs))
+    if (tcgetattr(term_, &oldAttrs))
         return std::string();
 
     struct termios newAttrs = oldAttrs;
@@ -638,13 +638,13 @@ std::string TerminalInfo::query(string_view query, string_view terminator) {
     if (!guard.set())
         return std::string();
 
-    if (tcdrain(STDOUT_FILENO))
+    if (tcdrain(term_))
         return std::string();
 
-    if (tcflush(STDOUT_FILENO, TCIFLUSH))
+    if (tcflush(term_, TCIFLUSH))
         return std::string();
 
-    if (std::size_t(write(STDOUT_FILENO, query.data(), query.size())) != query.size())
+    if (std::size_t(write(term_, cmd.data(), cmd.size())) != cmd.size())
         return std::string();
 
     // FIXME: This won't be enough for remote terminals (e.g. SSH)
@@ -652,7 +652,7 @@ std::string TerminalInfo::query(string_view query, string_view terminator) {
     std::this_thread::sleep_for(100ms);
 
     int available = 0;
-    if (ioctl(STDOUT_FILENO, FIONREAD, &available))
+    if (ioctl(term_, FIONREAD, &available))
         return std::string();
 
     std::string result;
@@ -662,7 +662,7 @@ std::string TerminalInfo::query(string_view query, string_view terminator) {
 
         for (; available > 0; --available) {
             char ch = '\0';
-            if (read(STDOUT_FILENO, &ch, 1) != 1)
+            if (read(term_, &ch, 1) != 1)
                 return std::string();
 
             if (!result.empty() || ch == '\x1b') {
@@ -674,7 +674,7 @@ std::string TerminalInfo::query(string_view query, string_view terminator) {
 
         // If we found an escape character but no terminator, continue reading
         if (!result.empty())
-            if (ioctl(STDOUT_FILENO, FIONREAD, &available))
+            if (ioctl(term_, FIONREAD, &available))
                 return std::string();
     }
 
