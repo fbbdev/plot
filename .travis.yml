@@ -1,18 +1,27 @@
 dist: trusty
 sudo: false
-language: c++
+language: cpp
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty
+      - llvm-toolchain-trusty-3.9
     packages:
+      - gcc-4.9
+      - g++-4.9
       - gcc-6
       - g++-6
+      - clang-3.9
+env:
+  - CCMP=gcc-4.9 CXXCMP=g++-4.9
+  - CCMP=gcc-6 CXXCMP=g++-6
+  - CCMP=clang-3.9 CXXCMP=clang++-3.9
 before_install:
   - bash install_deps.sh
-  - export CC=gcc-6
-  - export CXX=g++-6
   - export PATH="$HOME/deps/cmake/bin":"$PATH"
+  - export CC=$CCMP
+  - export CXX=$CXXCMP
 cache:
   directories:
     - $HOME/deps
