@@ -24,6 +24,8 @@
 
 #include "../plot.hpp"
 
+#include "iterators.hpp"
+
 #include <cmath>
 #include <csignal>
 #include <chrono>
@@ -43,38 +45,40 @@ int main() {
     TerminalInfo term;
     term.detect();
 
-    BrailleCanvas canvas({ 30, 7 }, term);
+    RealCanvas<BrailleCanvas> canvas({ { 0.0f, 1.0f }, { 1.0f, -1.0f } }, Size(30, 7), term);
     auto layout = margin(frame(&canvas, term));
 
-    Rect rect({ 0, 0 }, canvas.size() - Point(1, 2));
-    auto size = rect.size() + Point(1, 1);
+    auto bounds = canvas.bounds();
+    auto size = canvas.size();
+    auto pixel = canvas.unmap_size({ 1, 1 });
 
-    auto y0 = rect.p1.y, A = size.y/2, N = size.x;
+    float A = (size.y/2.0f) - pixel.y;
     float f = 2.0f;
 
-    auto sin = [N,f](float t, float x) {
-        return std::sin(2*3.141592f*f*(t + x/N));
+    auto sin = [A,f](float t) {
+        return A*std::sin(2*3.141592f*f*t);
     };
 
-    auto cos = [N,f](float t, float x) {
-        return std::cos(2*3.141592f*f*(t + x/N));
+    auto cos = [A,f](float t) {
+        return A*std::cos(2*3.141592f*f*t);
     };
 
-    auto stroke_fn = [y0,A](auto const& fn, float t_) { // XXX: t_ due to a bug in GCC's -Wshadow
-        return [y0,A,fn,t_](float x) {
-            Coord base = y0 + A - std::lround(A*fn(t_, x)),
-                  end  = y0 + A - std::lround(A*fn(t_, x + 1));
-            return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+    auto plot_fn = [x_end=bounds.p2.x](auto const& fn, float t_) {
+        return [&fn, t_, x_end](float x) -> Pointf {
+            return { x, fn(t_ - (x_end - x)) };
         };
     };
+
+    range_iterator<float> rng(bounds.p1.x, bounds.p2.x, pixel.x);
+    range_iterator<float> rng_end;
 
     float t = 0.0f;
 
     while (true) {
         canvas.clear()
-              .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
-              .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
-              .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+              .path(palette::royalblue, map(rng, plot_fn(sin, t)), map(rng_end, plot_fn(sin, t)))
+              .path(palette::red, map(rng, plot_fn(cos, t)), map(rng_end, plot_fn(cos, t)))
+              .line(term.foreground_color, { bounds.p1.x, 0.0f }, { bounds.p2.x, 0.0f }, TerminalOp::ClipSrc);
 
         for (auto const& line: layout)
             std::cout << term.clear_line() << line << '\n';
