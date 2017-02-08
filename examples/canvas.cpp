@@ -30,36 +30,36 @@
 
 using namespace plot;
 
-//Create a function for returning the start and end stroke across a cell
-//the Coord x is the current x location within the bounding box.
-std::pair<Coord,Coord> sinPlotFunction(const Coord x)
-{
-    Coord base = 55 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f)));
-    Coord end  = 55 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
+// Create a function for returning the start and end stroke across a cell
+// the Coord x is the current x location within the canvas.
+std::pair<Coord,Coord> sinStrokeFunction(const Coord x) {
+    Coord base = 58 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f)));
+    Coord end  = 58 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
     return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
-};
+}
 
 int main() {
-    //Each Braille Canvas is made up of cells that are 2x4 points
-    constexpr Coord canvasCellCols=70;
-    constexpr Coord canvasCellRows=20;
-    constexpr Size canvasCellSize{canvasCellCols,canvasCellRows};
-    BrailleCanvas canvas(ColorPicker::floralwhite,canvasCellSize, TerminalInfo().detect());
-    //The grid of the canvas is 70*2 x 20*4 or 140x80 points
-    //so all future coordinates for where to draw objects are
-    //relative to the 140x80 points with the origin (i.e. Point{0,0}) in the upper
-    //left hand corner.
+    // Each Braille Canvas is made up of cells that are 2x4 points
+    constexpr Coord canvasCellCols = 70;
+    constexpr Coord canvasCellRows = 20;
+    constexpr Size canvasCellSize(canvasCellCols, canvasCellRows);
 
-    //First draw a rectangle with a 'firebrick' outline and 'blueviolet; filling from point
+    BrailleCanvas canvas(canvasCellSize, TerminalInfo().detect());
+    // The grid of the canvas is 70*2 x 20*4 or 140x80 points
+    // so all future coordinates for where to draw objects are
+    // relative to the 140x80 points with the origin (i.e. Point{0,0}) in the upper
+    // left hand corner.
+
+    // First draw a rectangle with a 'firebrick' outline and 'blueviolet; filling from point
     // location 11,11 to 40,40
-    constexpr GenericPoint<Coord> upperLeft{11,11};
-    constexpr GenericPoint<Coord> lowerRight{40,40};
-    constexpr Rect FilledRectangleSize{ upperLeft, lowerRight };
+    constexpr Point upperLeft(11, 11);
+    constexpr Point lowerRight(40, 40);
+    constexpr Rect FilledRectangleSize(upperLeft, lowerRight);
     canvas.rect(ColorPicker::firebrick, ColorPicker::blueviolet, FilledRectangleSize);
 
-    //next push lines in 'limegreen' overlayed onto the canvas
-    //note that each method returns a reference to the object so
-    //that commands can be easily chained together.
+    // next push lines in 'limegreen' overlayed onto the canvas
+    // note that each method returns a reference to the object so
+    // that commands can be easily chained together.
     canvas.push()
               .line(ColorPicker::limegreen, { 12, 17 }, { 17, 39 })
               .line(ColorPicker::limegreen, { 17, 39 }, { 39, 34 })
@@ -67,38 +67,40 @@ int main() {
               .line(ColorPicker::limegreen, { 34, 12 }, { 12, 17 })
           .pop(TerminalOp::ClipDst);
 
-    //Plot an ellipse in a bounding box from {0,0} to {30,30} offset by {45,11}
-    constexpr Rect greyEllipseBoundingBox=Rect({ 30, 30 }) + Point(45, 11);
+    // Plot an ellipse in a bounding box from {0,0} to {30,30} offset by {45,11}
+    constexpr Rect greyEllipseBoundingBox = Rect({ 30, 30 }) + Point(45, 11);
     canvas.ellipse(ColorPicker::slategrey, greyEllipseBoundingBox);
-    //Plot an elipse with green line, filled with yellow centered at {60,26} with  semi-szis of {10,12}
-    canvas.ellipse(ColorPicker::green, ColorPicker::yellow, { 60, 26 }, { 10, 15 });
+    // Plot an elipse with green outline, filled with yellow centered at {60,26} with  semi-axes of {10,12}
+    canvas.ellipse(ColorPicker::green, ColorPicker::yellow, { 60, 26 }, { 10, 12 });
 
-    //Plot a function in 'mediumblue' color
-    //Bounding box for where the stroke functions are rendered.
-    constexpr Coord xStart=12;
-    constexpr Coord xStop=71;
-    constexpr Coord yStart=42;
-    constexpr Coord yStop=67;
-    constexpr Rect functionRectArea{ { xStart, yStart }, { xStop, yStop } };
-    canvas.rect(ColorPicker::lightcyan,functionRectArea);
+    // Plot a function in 'mediumblue' color
+    // Bounding box for where the stroke functions are rendered.
+    constexpr Coord xStart = 12;
+    constexpr Coord xStop  = 71;
+    constexpr Coord yStart = 46;
+    constexpr Coord yStop  = 71;
+    constexpr Rect functionRectArea({ xStart, yStart }, { xStop, yStop });
+    canvas.rect(ColorPicker::lightcyan, functionRectArea);
+
     canvas.push();
-
-    //The function 'sinPlotFunction' will be evaluated at each value in [xStart, xStop)
-    //and stroke in the color of 'mediumblue' will be rendered for those coordinates.
-    canvas.stroke(ColorPicker::mediumblue, functionRectArea , sinPlotFunction);
-    //Plot using a lambda function for cos
+    // The function 'sinStrokeFunction' will be evaluated at each value in [xStart, xStop]
+    // and stroke in the color of 'mediumblue' will be rendered for those coordinates.
+    // Strokes will be clipped to range [yStart, yStop].
+    canvas.stroke(ColorPicker::mediumblue, functionRectArea , sinStrokeFunction);
+    // Plot using a lambda function for cos
     canvas.stroke(ColorPicker::crimson, functionRectArea, [](Coord x) {
-              constexpr Coord amplitude=10;
-              Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
-                    end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
-              return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
-          }, TerminalOp::ClipSrc);
+         constexpr Coord amplitude = 10;
+         Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
+               end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
+         return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+     }, TerminalOp::Over);
      canvas.pop(TerminalOp::ClipDst);
-     //Place a dot in each corner of the pixel grid
-     canvas.dot(ColorPicker::orange,{0,0});
-     canvas.dot(ColorPicker::purple,{0,80-1});
-     canvas.dot(ColorPicker::gold,{140-1,0});
-     canvas.dot(ColorPicker::indigo,{140-1,80-1});
+
+    // Place a dot in each corner of the pixel grid
+    canvas.dot(ColorPicker::orange, { 0, 0 });
+    canvas.dot(ColorPicker::purple, { 0, canvas.size().y - 1 });
+    canvas.dot(ColorPicker::gold,   { canvas.size().x - 1, 0 });
+    canvas.dot(ColorPicker::indigo, canvas.size() - Point(1, 1));
 
     std::cout << canvas << std::endl;
 
