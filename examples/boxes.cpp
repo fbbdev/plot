@@ -53,7 +53,14 @@ int main() {
              waves.canvas().char_size().y + mul_waves.canvas().char_size().y + 3),
         term);
 
-    auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle)));
+    // Build block layout
+    auto layout =
+        margin(
+            hbox(
+                vbox(
+                    frame("cos(t), sin(t)", Align::Center, &waves),
+                    frame("cos(t)*sin(t), sin^2(t)", Align::Center, &mul_waves)),
+                frame("P(cos(t)*sin(t), sin^2(t))", Align::Center, &circle)));
 
     auto bounds = waves.bounds();
     auto size = waves.size();
