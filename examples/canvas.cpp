@@ -26,27 +26,32 @@
 
 #include <cmath>
 #include <iostream>
+#include "opengl_colors.hpp"
 
 using namespace plot;
 
 int main() {
-    BrailleCanvas canvas({ 70, 20 }, TerminalInfo().detect());
+    constexpr Coord canvasCols=70;
+    constexpr Coord canvasRows=20;
+    constexpr Size canvasSize{canvasCols,canvasRows};
+    BrailleCanvas canvas(ColorPicker::floralwhite,canvasSize, TerminalInfo().detect());
 
-    canvas.rect({ 1.0f, 0.35f, 0.0f }, { 0.0f, 0.2f, 1.0f }, { { 11, 11 }, { 40, 40 } })
+    canvas.rect(ColorPicker::firebrick, ColorPicker::blueviolet, { { 11, 11 }, { 40, 40 } })
           .push()
-              .line({ 0.4f,  1.0f, 0.4f }, { 12, 17 }, { 17, 39 })
-              .line({ 0.4f,  1.0f, 0.4f }, { 17, 39 }, { 39, 34 })
-              .line({ 0.4f,  1.0f, 0.4f }, { 39, 34 }, { 34, 12 })
-              .line({ 0.4f,  1.0f, 0.4f }, { 34, 12 }, { 12, 17 })
-          .pop(TerminalOp::ClipDst)
-          .ellipse({ 0.6f, 0.6f, 0.6f }, Rect({ 30, 30 }) + Point(45, 11))
-          .ellipse({ 0, 0, 0 }, { 1.0f, 1.0f, 1.0f }, { 60, 26 }, { 10, 10 })
-          .stroke({ 0.2f, 0.2f, 1.0f }, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
+              .line(ColorPicker::limegreen, { 12, 17 }, { 17, 39 })
+              .line(ColorPicker::limegreen, { 17, 39 }, { 39, 34 })
+              .line(ColorPicker::limegreen, { 39, 34 }, { 34, 12 })
+              .line(ColorPicker::limegreen, { 34, 12 }, { 12, 17 })
+          .pop(TerminalOp::ClipDst);
+    canvas.ellipse(ColorPicker::grey, Rect({ 30, 30 }) + Point(45, 11))
+          .ellipse(ColorPicker::black, ColorPicker::white, { 60, 26 }, { 10, 10 });
+
+    canvas.stroke(ColorPicker::mediumblue, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
               Coord base = 55 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f))),
                     end  = 55 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
               return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
-          })
-          .stroke({ 1.0f, 0.4f, 0.4f }, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
+          });
+    canvas.stroke(ColorPicker::crimson, { { 12, 42 }, { 71, 67 } }, [](Coord x) {
               Coord base = 55 - std::lround(10*std::cos(2*3.141592f*((x - 12)/30.0f))),
                     end  = 55 - std::lround(10*std::cos(2*3.141592f*((x - 11)/30.0f)));
               return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
