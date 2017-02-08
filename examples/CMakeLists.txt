@@ -39,3 +39,6 @@ target_link_libraries(real_canvas ${LIBS})
 target_link_libraries(frame ${LIBS})
 target_link_libraries(animation ${LIBS})
 target_link_libraries(boxes ${LIBS})
+
+add_executable(make_xterm_table make_xterm_table.cpp)
+target_link_libraries(make_xterm_table ${LIBS})
