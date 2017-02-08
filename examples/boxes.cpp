@@ -61,7 +61,7 @@ int main() {
 
     auto circle_bounds = circle.bounds();
 
-    float A = size.y/2.0f - pixel.y;
+    float A = size.y/2.0f;
     float f = 2.0f;
 
     int track_length = (size.x/pixel.x)/(2*f)/2;
@@ -89,7 +89,9 @@ int main() {
         };
     };
 
-    range_iterator<float> rng(bounds.p1.x, bounds.p2.x, pixel.x);
+    // Plot function in range [bounds.p1.x, bounds.p2.x] with step of 1px
+    // Actually, the range is [bounds.p1.x, bounds.p2.x + 1px)
+    range_iterator<float> rng(bounds.p1.x, bounds.p2.x + pixel.x, pixel.x);
     range_iterator<float> rng_end;
 
     constexpr Color sin_color(0.2f, 0.2f, 1.0f);
