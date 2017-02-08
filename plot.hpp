@@ -30,6 +30,8 @@
 #include "terminal.hpp"
 
 #include "color.hpp"
+#include "colors.hpp"
+
 #include "point.hpp"
 #include "rect.hpp"
 

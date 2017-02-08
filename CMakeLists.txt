@@ -30,10 +30,11 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 
 set(HEADER_FILES
-    plot.hpp
     braille.hpp
     color.hpp
+    colors.hpp
     layout.hpp
+    plot.hpp
     point.hpp
     real_canvas.hpp
     rect.hpp

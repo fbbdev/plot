@@ -26,7 +26,6 @@
 
 #include <cmath>
 #include <iostream>
-#include "opengl_colors.hpp"
 
 using namespace plot;
 
@@ -55,23 +54,23 @@ int main() {
     constexpr Point upperLeft(11, 11);
     constexpr Point lowerRight(40, 40);
     constexpr Rect FilledRectangleSize(upperLeft, lowerRight);
-    canvas.rect(ColorPicker::firebrick, ColorPicker::blueviolet, FilledRectangleSize);
+    canvas.rect(palette::firebrick, palette::blueviolet, FilledRectangleSize);
 
     // next push lines in 'limegreen' overlayed onto the canvas
     // note that each method returns a reference to the object so
     // that commands can be easily chained together.
     canvas.push()
-              .line(ColorPicker::limegreen, { 12, 17 }, { 17, 39 })
-              .line(ColorPicker::limegreen, { 17, 39 }, { 39, 34 })
-              .line(ColorPicker::limegreen, { 39, 34 }, { 34, 12 })
-              .line(ColorPicker::limegreen, { 34, 12 }, { 12, 17 })
+              .line(palette::limegreen, { 12, 17 }, { 17, 39 })
+              .line(palette::limegreen, { 17, 39 }, { 39, 34 })
+              .line(palette::limegreen, { 39, 34 }, { 34, 12 })
+              .line(palette::limegreen, { 34, 12 }, { 12, 17 })
           .pop(TerminalOp::ClipDst);
 
     // Plot an ellipse in a bounding box from {0,0} to {30,30} offset by {45,11}
     constexpr Rect greyEllipseBoundingBox = Rect({ 30, 30 }) + Point(45, 11);
-    canvas.ellipse(ColorPicker::slategrey, greyEllipseBoundingBox);
+    canvas.ellipse(palette::slategrey, greyEllipseBoundingBox);
     // Plot an elipse with green outline, filled with yellow centered at {60,26} with  semi-axes of {10,12}
-    canvas.ellipse(ColorPicker::green, ColorPicker::yellow, { 60, 26 }, { 10, 12 });
+    canvas.ellipse(palette::green, palette::yellow, { 60, 26 }, { 10, 12 });
 
     // Plot a function in 'mediumblue' color
     // Bounding box for where the stroke functions are rendered.
@@ -80,27 +79,27 @@ int main() {
     constexpr Coord yStart = 46;
     constexpr Coord yStop  = 71;
     constexpr Rect functionRectArea({ xStart, yStart }, { xStop, yStop });
-    canvas.rect(ColorPicker::lightcyan, functionRectArea);
+    canvas.rect(palette::lightcyan, functionRectArea);
 
     canvas.push();
     // The function 'sinStrokeFunction' will be evaluated at each value in [xStart, xStop]
-    // and stroke in the color of 'mediumblue' will be rendered for those coordinates.
+    // and stroke in the color of 'royalblue' will be rendered for those coordinates.
     // Strokes will be clipped to range [yStart, yStop].
-    canvas.stroke(ColorPicker::mediumblue, functionRectArea , sinStrokeFunction);
+    canvas.stroke(palette::royalblue, functionRectArea , sinStrokeFunction);
     // Plot using a lambda function for cos
-    canvas.stroke(ColorPicker::crimson, functionRectArea, [](Coord x) {
+    canvas.stroke(palette::salmon, functionRectArea, [](Coord x) {
          constexpr Coord amplitude = 10;
          Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
                end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
          return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
-     }, TerminalOp::Over);
-     canvas.pop(TerminalOp::ClipDst);
+     }, TerminalOp::ClipSrc);
+     canvas.pop(TerminalOp::Over);
 
     // Place a dot in each corner of the pixel grid
-    canvas.dot(ColorPicker::orange, { 0, 0 });
-    canvas.dot(ColorPicker::purple, { 0, canvas.size().y - 1 });
-    canvas.dot(ColorPicker::gold,   { canvas.size().x - 1, 0 });
-    canvas.dot(ColorPicker::indigo, canvas.size() - Point(1, 1));
+    canvas.dot(palette::orange, { 0, 0 });
+    canvas.dot(palette::purple, { 0, canvas.size().y - 1 });
+    canvas.dot(palette::gold,   { canvas.size().x - 1, 0 });
+    canvas.dot(palette::indigo, canvas.size() - Point(1, 1));
 
     std::cout << canvas << std::endl;
 
