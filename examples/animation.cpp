@@ -52,7 +52,7 @@ int main() {
     auto size = canvas.size();
     auto pixel = canvas.unmap_size({ 1, 1 });
 
-    float A = (size.y/2.0f) - pixel.y;
+    float A = size.y/2.0f - pixel.y;
     float f = 2.0f;
 
     auto sin = [A,f](float t) {
@@ -63,9 +63,9 @@ int main() {
         return A*std::cos(2*3.141592f*f*t);
     };
 
-    auto plot_fn = [x_end=bounds.p2.x](auto const& fn, float t_) {
-        return [&fn, t_, x_end](float x) -> Pointf {
-            return { x, fn(t_ - (x_end - x)) };
+    auto plot_fn = [](auto const& fn, float t_) {
+        return [&fn, t_](float x) -> Pointf {
+            return { x, fn(t_ + x) };
         };
     };
 

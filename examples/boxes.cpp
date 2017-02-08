@@ -24,6 +24,8 @@
 
 #include "../plot.hpp"
 
+#include "iterators.hpp"
+
 #include <cmath>
 #include <csignal>
 #include <chrono>
@@ -43,70 +45,85 @@ int main() {
     TerminalInfo term;
     term.detect();
 
-    BrailleCanvas waves({ 30, 7 }, term);
-    BrailleCanvas mul_waves(waves.char_size(), term);
+    RealCanvas<BrailleCanvas> waves({ { 0.0f, 1.0f }, { 1.0f, -1.0f } }, Size(30, 7), term);
+    RealCanvas<BrailleCanvas> mul_waves(waves.bounds(), waves.canvas().char_size(), term);
     RealCanvas<BrailleCanvas> circle(
         { { -1.2f, 1.2f }, { 1.2f, -1.2f } },
-        Size(2*(waves.char_size().y + mul_waves.char_size().y + 3),
-             waves.char_size().y + mul_waves.char_size().y + 3),
+        Size(2*(waves.canvas().char_size().y + mul_waves.canvas().char_size().y + 3),
+             waves.canvas().char_size().y + mul_waves.canvas().char_size().y + 3),
         term);
 
     auto layout = margin(hbox(vbox(frame(&waves), frame(&mul_waves)), frame(&circle)));
 
-    Rect rect({ 0, 0 }, waves.size() - Point(1, 2));
-    auto size = rect.size() + Point(1, 1);
+    auto bounds = waves.bounds();
+    auto size = waves.size();
+    auto pixel = waves.unmap_size({ 1, 1 });
 
     auto circle_bounds = circle.bounds();
 
-    auto y0 = rect.p1.y, A = size.y/2, N = size.x;
+    float A = size.y/2.0f - pixel.y;
     float f = 2.0f;
 
-    auto sin = [N,f](float t, float x) {
-        return std::sin(2*3.141592f*f*(t + x/N));
+    int track_length = (size.x/pixel.x)/(2*f)/2;
+
+    auto sin = [A,f](float t) {
+        return A*std::sin(2*3.141592f*f*t);
     };
 
-    auto cos = [N,f](float t, float x) {
-        return std::cos(2*3.141592f*f*(t + x/N));
+    auto cos = [A,f](float t) {
+        return A*std::cos(2*3.141592f*f*t);
     };
 
-    auto sin2 = [sin](float t, float x) {
-        auto val = sin(t, x);
+    auto sin2 = [sin](float t) {
+        auto val = sin(t);
         return val*val;
     };
 
-    auto sincos = [sin,cos](float t, float x) {
-        return sin(t, x) * cos(t, x);
+    auto sincos = [sin,cos](float t) {
+        return sin(t) * cos(t);
     };
 
-    auto stroke_fn = [y0,A](auto const& fn, float t_) { // XXX: t_ due to a bug in GCC's -Wshadow
-        return [y0,A,fn,t_](float x) {
-            Coord base = y0 + A - std::lround(A*fn(t_, x)),
-                  end  = y0 + A - std::lround(A*fn(t_, x + 1));
-            return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+    auto plot_fn = [](auto const& fn, float t_) {
+        return [&fn, t_](float x) -> Pointf {
+            return { x, fn(t_ + x) };
         };
     };
+
+    range_iterator<float> rng(bounds.p1.x, bounds.p2.x, pixel.x);
+    range_iterator<float> rng_end;
+
+    constexpr Color sin_color(0.2f, 0.2f, 1.0f);
+    constexpr Color cos_color(1.0f, 0.4f, 0.4f);
+    constexpr Color sin2_color(0.4f, 1.0f, 0.4f);
+    constexpr Color sincos_color(1.0f, 0.8f, 0.2f);
 
     float t = 0.0f;
 
     while (true) {
         waves.clear()
-             .stroke({ 0.2f, 0.2f, 1.0f }, rect, stroke_fn(sin, t))
-             .stroke({ 1.0f, 0.4f, 0.4f }, rect, stroke_fn(cos, t))
-             .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+             .path(sin_color, map(rng, plot_fn(sin, t)), map(rng_end, plot_fn(sin, t)))
+             .path(cos_color, map(rng, plot_fn(cos, t)), map(rng_end, plot_fn(cos, t)))
+             .line(term.foreground_color, { bounds.p1.x, 0.0f }, { bounds.p2.x, 0.0f }, TerminalOp::ClipSrc);
 
         mul_waves.clear()
-                 .stroke({ 0.4f, 1.0f, 0.4f }, rect, stroke_fn(sin2, t))
-                 .stroke({ 1.0f, 0.8f, 0.2f }, rect, stroke_fn(sincos, t))
-                 .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
+                 .path(sin2_color, map(rng, plot_fn(sin2, t)), map(rng_end, plot_fn(sin2, t)))
+                 .path(sincos_color, map(rng, plot_fn(sincos, t)), map(rng_end, plot_fn(sincos, t)))
+                 .line(term.foreground_color, { bounds.p1.x, 0.0f }, { bounds.p2.x, 0.0f }, TerminalOp::ClipSrc);
 
-        Pointf pos(sincos(t, N), sin2(t, N));
+        Pointf pos(sincos(t + bounds.p2.x), sin2(t + bounds.p2.x));
 
         circle.clear()
+              // X axis
               .line(term.foreground_color, { circle_bounds.p1.x, 0 }, { circle_bounds.p2.x, 0 })
+              // Y axis
               .line(term.foreground_color, { 0, circle_bounds.p1.y }, { 0, circle_bounds.p2.y })
-              .line({ 1.0f, 0.8f, 0.2f }, { 0, pos.y }, pos)
-              .line({ 0.4f, 1.0f, 0.4f }, { pos.x, 0 }, pos)
+              // pos.x component
+              .line(sincos_color, { 0, pos.y }, pos)
+              // pos.y component
+              .line(sin2_color, { pos.x, 0 }, pos)
+              // radius
               .line(term.foreground_color, { 0, 0 }, pos)
+              // Draw small cross at pos
               .push()
                   .dot(term.foreground_color, pos)
                   .dot(term.foreground_color, pos - circle.unmap_size({ 1, 0 }))
@@ -116,11 +133,11 @@ int main() {
               .pop()
               .push();
 
-        auto track_length = N/Coord(2*f)/2;
-        for (Coord x = 0; x < track_length; ++x) {
-            Pointf start(sincos(t, N - x), sin2(t, N - x));
-            Pointf end(sincos(t, N - x - 1), sin2(t, N - x - 1));
-            circle.line(term.foreground_color.alpha(float(track_length - x)/track_length), start, end);
+        for (int i = 0; i < track_length; ++i) {
+            auto x = i*pixel.x;
+            Pointf start(sincos(t + (bounds.p2.x - x)), sin2(t + (bounds.p2.x - x)));
+            Pointf end(sincos(t + (bounds.p2.x - x - pixel.x)), sin2(t + (bounds.p2.x - x - pixel.x)));
+            circle.line(term.foreground_color.alpha(float(track_length - i)/track_length), start, end);
         }
 
         circle.pop();
