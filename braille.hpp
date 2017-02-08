@@ -47,9 +47,12 @@ class BrailleCanvas;
 
 namespace detail { namespace braille
 {
+    //The dimensions of a Braille cell are 2x4
+    constexpr std::uint8_t cell_cols=2;
+    constexpr std::uint8_t cell_rows=4;
     // Unicode braille patterns: 0x28xx
     // See https://en.wikipedia.org/wiki/Braille_Patterns
-    static constexpr std::uint8_t pixel_codes[2][4] = { { 0x01, 0x02, 0x04, 0x40 }, { 0x08, 0x10, 0x20, 0x80 } };
+    static constexpr std::uint8_t pixel_codes[cell_cols][cell_rows] = { { 0x01, 0x02, 0x04, 0x40 }, { 0x08, 0x10, 0x20, 0x80 } };
 
     inline constexpr std::uint8_t bitcount(std::uint8_t n) {
         return (n & 1) + bool(n & 2) + bool(n & 4) + bool(n & 8) +
@@ -78,12 +81,12 @@ namespace detail { namespace braille
         }
 
         block_t& clear(std::size_t x, std::size_t y) {
-            pixels &= ~pixel_codes[x % 2][y % 4];
+            pixels &= ~pixel_codes[x % cell_cols][y % cell_rows];
             return *this;
         }
 
         block_t& set(std::size_t x, std::size_t y) {
-            pixels |= pixel_codes[x % 2][y % 4];
+            pixels |= pixel_codes[x % cell_cols][y % cell_rows];
             return *this;
         }
 
@@ -224,6 +227,8 @@ namespace detail { namespace braille
 
 class BrailleCanvas {
 public:
+    constexpr static uint8_t cell_cols = detail::braille::cell_cols;
+    constexpr static uint8_t cell_rows = detail::braille::cell_rows;
     using value_type = detail::braille::line_t;
     using reference = value_type const&;
     using const_reference = value_type const&;
@@ -257,7 +262,7 @@ public:
     }
 
     Size size() const {
-        return { Coord(2*cols_), Coord(4*lines_) };
+        return { Coord(cell_cols*cols_), Coord(cell_rows*lines_) };
     }
 
     const_iterator begin() const {
@@ -325,17 +330,17 @@ public:
     BrailleCanvas& clear(Rect rct) {
         rct = rct.sorted();
         Rect block_rect{
-            { rct.p1.x/2, rct.p1.y/4 },
-            { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
-              utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
+            { rct.p1.x/cell_cols, rct.p1.y/cell_rows },
+            { utils::max(1l, rct.p2.x/cell_cols + (rct.p2.x%cell_cols)),
+              utils::max(1l, rct.p2.y/cell_rows + (rct.p2.y%cell_rows != 0)) }
         };
 
         rct.p2 += Point(1, 1);
 
         for (auto ln = block_rect.p1.y; ln < block_rect.p2.y; ++ln) {
-            auto ybase = 4*ln;
+            auto ybase = cell_rows*ln;
             for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
-                auto xbase = 2*col;
+                auto xbase = cell_cols*col;
                 detail::braille::block_t src({ 0, 0, 0, 0 },
                     rct.contains({ xbase, ybase }),
                     rct.contains({ xbase, ybase+1 }),
@@ -360,7 +365,7 @@ public:
 
     BrailleCanvas& dot(Color const& color, Point p, TerminalOp op = TerminalOp::Over) {
         if (Rect({}, size()).contains(p)) {
-            paint(p.y / 4, p.x / 2, detail::braille::block_t(color).set(p.x % 2, p.y % 4), op);
+            paint(p.y / cell_rows, p.x / cell_cols, detail::braille::block_t(color).set(p.x % cell_cols, p.y % cell_rows), op);
         }
         return *this;
     }
@@ -426,7 +431,7 @@ public:
 
         float x_fac = 2.0f/size_.x;
         Coord y_fac = size_.y/2 - (!(size_.y % 2)),
-              cx = rct.p1.x + (size_.x/2) - (!(size_.x % 2)),
+              cx = rct.p1.x + (size_.x/cell_cols) - (!(size_.x % cell_cols)),
               cy = rct.p1.y + y_fac;
 
         return push()
@@ -467,7 +472,7 @@ public:
 
         float x_fac = 2.0f/size_.x;
         Coord y_fac = size_.y/2 - (!(size_.y % 2)),
-              cx = rct.p1.x + (size_.x/2) - (!(size_.x % 2)),
+              cx = rct.p1.x + (size_.x/cell_cols) - (!(size_.x % cell_cols)),
               cy = rct.p1.y + y_fac;
 
         return push()
@@ -565,18 +570,18 @@ BrailleCanvas& BrailleCanvas::stroke(Color const& color, Rect rct, Fn&& fn, Term
     rct.p2 += Point(1, 1);
     rct = rct.clamp(size());
     Rect block_rect{
-        { rct.p1.x/2, rct.p1.y/4 },
-        { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
-          utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
+        { rct.p1.x/cell_cols, rct.p1.y/cell_rows },
+        { utils::max(1l, rct.p2.x/cell_cols + (rct.p2.x%cell_cols)),
+          utils::max(1l, rct.p2.y/cell_rows + (rct.p2.y%cell_rows != 0)) }
     };
 
     for (auto ln = block_rect.p1.y; ln < block_rect.p2.y; ++ln) {
-        auto line_start = utils::clamp(4*ln, rct.p1.y, rct.p2.y),
-             line_end = utils::clamp(4*ln + 4, rct.p1.y, rct.p2.y);
+        auto line_start = utils::clamp(cell_rows*ln, rct.p1.y, rct.p2.y),
+             line_end = utils::clamp(cell_rows*ln + cell_rows, rct.p1.y, rct.p2.y);
 
         for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
-            auto col_start = utils::clamp(2*col, rct.p1.x, rct.p2.x),
-                 col_end = utils::clamp(2*col + 2, rct.p1.x, rct.p2.x);
+            auto col_start = utils::clamp(cell_cols*col, rct.p1.x, rct.p2.x),
+                 col_end = utils::clamp(cell_cols*col + cell_cols, rct.p1.x, rct.p2.x);
 
             detail::braille::block_t src(color);
 
@@ -606,9 +611,9 @@ BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rct, Fn&& fn, Termin
     rct.p2 += Point(1, 1);
     rct = rct.clamp(size());
     Rect block_rect{
-        { rct.p1.x/2, rct.p1.y/4 },
-        { utils::max(1l, rct.p2.x/2 + (rct.p2.x%2)),
-          utils::max(1l, rct.p2.y/4 + (rct.p2.y%4 != 0)) }
+        { rct.p1.x/cell_cols, rct.p1.y/cell_rows },
+        { utils::max(1l, rct.p2.x/cell_cols + (rct.p2.x%cell_cols)),
+          utils::max(1l, rct.p2.y/cell_rows + (rct.p2.y%cell_rows != 0)) }
     };
 
     auto set = [rct,&fn](Point p) {
@@ -616,9 +621,9 @@ BrailleCanvas& BrailleCanvas::fill(Color const& color, Rect rct, Fn&& fn, Termin
     };
 
     for (auto ln = block_rect.p1.y; ln < block_rect.p2.y; ++ln) {
-        auto ybase = 4*ln;
+        auto ybase = cell_rows*ln;
         for (auto col = block_rect.p1.x; col < block_rect.p2.x; ++col) {
-            auto xbase = 2*col;
+            auto xbase = cell_cols*col;
             detail::braille::block_t src(color,
                 set({ xbase, ybase }),
                 set({ xbase, ybase+1 }),
