@@ -58,9 +58,9 @@ int main() {
         margin(
             hbox(
                 vbox(
-                    frame("cos(t), sin(t)", Align::Center, &waves),
-                    frame("cos(t)·sin(t), sin²(t)", Align::Center, &mul_waves)),
-                frame("P(cos(t)·sin(t), sin²(t))", Align::Center, &circle)));
+                    frame(u8"cos(t), sin(t)", Align::Center, &waves),
+                    frame(u8"cos(t)·sin(t), sin²(t)", Align::Center, &mul_waves)),
+                frame(u8"P(cos(t)·sin(t), sin²(t))", Align::Center, &circle)));
 
     auto bounds = waves.bounds();
     auto size = waves.size();

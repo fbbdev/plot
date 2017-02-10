@@ -55,9 +55,9 @@ int main() {
           .line(term.foreground_color, { rect.p1.x, y0 + A }, { rect.p2.x, y0 + A }, TerminalOp::ClipSrc);
 
     std::cout << margin(1, 2, 0, 2, frame(BorderStyle::None, &canvas, term))
-              << margin(1, 2, 0, 2, frame("Label", &canvas, term))
-              << margin(1, 2, 0, 2, frame("Label", Align::Center, { BorderStyle::Solid, true }, &canvas, term))
-              << margin(1, 2, 0, 2, frame("Label", Align::Right, BorderStyle::SolidBold, &canvas, term))
+              << margin(1, 2, 0, 2, frame(u8"Label", &canvas, term))
+              << margin(1, 2, 0, 2, frame(u8"Label", Align::Center, { BorderStyle::Solid, true }, &canvas, term))
+              << margin(1, 2, 0, 2, frame(u8"Label", Align::Right, BorderStyle::SolidBold, &canvas, term))
               << margin(1, 2, 0, 2, frame(BorderStyle::Dashed, &canvas, term))
               << margin(1, 2, 0, 2, frame({ BorderStyle::Dashed, true }, &canvas, term))
               << margin(1, 2, 0, 2, frame(BorderStyle::DashedBold, &canvas, term))

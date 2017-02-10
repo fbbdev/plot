@@ -124,7 +124,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, title_setter const& setter) {
-            return stream << "\x1b]0;" << setter.title << "\x1b\\";
+            return stream << u8"\x1b]0;" << setter.title << u8"\x1b\\";
         }
 
         struct foreground_setter
@@ -133,7 +133,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, foreground_setter const& setter) {
-            return stream << "\x1b[" << (30 + setter.color.first) << 'm';
+            return stream << u8"\x1b[" << (30 + setter.color.first) << 'm';
         }
 
         struct background_setter
@@ -142,7 +142,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, background_setter const& setter) {
-            return stream << "\x1b[" << (40 + setter.color.first) << 'm';
+            return stream << u8"\x1b[" << (40 + setter.color.first) << 'm';
         }
 
         struct foreground_setter_256
@@ -151,7 +151,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, foreground_setter_256 const& setter) {
-            return stream << "\x1b[38;5;" << unsigned(setter.code) << 'm';
+            return stream << u8"\x1b[38;5;" << unsigned(setter.code) << 'm';
         }
 
         struct background_setter_256
@@ -160,7 +160,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, background_setter_256 const& setter) {
-            return stream << "\x1b[48;5;" << unsigned(setter.code) << 'm';
+            return stream << u8"\x1b[48;5;" << unsigned(setter.code) << 'm';
         }
 
         struct foreground_setter_24bit
@@ -169,7 +169,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, foreground_setter_24bit const& setter) {
-            return stream << "\x1b[38;2;"
+            return stream << u8"\x1b[38;2;"
                           << unsigned(setter.color.r) << ';'
                           << unsigned(setter.color.g) << ';'
                           << unsigned(setter.color.b) << 'm';
@@ -181,7 +181,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, background_setter_24bit const& setter) {
-            return stream << "\x1b[48;2;"
+            return stream << u8"\x1b[48;2;"
                           << unsigned(setter.color.r) << ';'
                           << unsigned(setter.color.g) << ';'
                           << unsigned(setter.color.b) << 'm';
@@ -193,7 +193,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, cursor_setter const& setter) {
-            return stream << "\x1b[" << setter.loc.y << ';' << setter.loc.x << 'H';
+            return stream << u8"\x1b[" << setter.loc.y << ';' << setter.loc.x << 'H';
         }
 
         enum class cursor_direction
@@ -208,7 +208,7 @@ namespace ansi
         };
 
         inline std::ostream& operator<<(std::ostream& stream, cursor_move const& move) {
-            stream << "\x1b[" << move.count;
+            stream << u8"\x1b[" << move.count;
 
             switch (move.direction) {
                 case cursor_direction::up:
@@ -242,19 +242,19 @@ namespace ansi
     }
 
     inline std::ostream& reset(std::ostream& stream) {
-        return stream << "\x1b[0m";
+        return stream << u8"\x1b[0m";
     }
 
     inline std::ostream& bold(std::ostream& stream) {
-        return stream << "\x1b[1m";
+        return stream << u8"\x1b[1m";
     }
 
     inline std::ostream& clear(std::ostream& stream) {
-        return stream << "\x1b[0;0H\x1b[2J";
+        return stream << u8"\x1b[0;0H\x1b[2J";
     }
 
     inline std::ostream& clear_line(std::ostream& stream) {
-        return stream << "\x1b[K";
+        return stream << u8"\x1b[K";
     }
 
     inline std::ostream& line_start(std::ostream& stream) {
@@ -422,9 +422,9 @@ public:
         if (!is_terminal())
             return loc;
 
-        auto response = query("\x1b[6n", "R");
+        auto response = query(u8"\x1b[6n", u8"R");
         if (!response.empty())
-            std::sscanf(response.c_str(), "\x1b[%ld;%ldR", &loc.y, &loc.x);
+            std::sscanf(response.c_str(), u8"\x1b[%ld;%ldR", &loc.y, &loc.x);
 
         return loc;
     }
@@ -555,38 +555,38 @@ TerminalInfo& TerminalInfo::detect() {
 
     string_view name, colorterm, vte_version;
 
-    auto tmp = std::getenv("TERM");
+    auto tmp = std::getenv(u8"TERM");
     if (tmp) name = tmp;
 
-    tmp = std::getenv("COLORTERM");
+    tmp = std::getenv(u8"COLORTERM");
     if (tmp) colorterm = tmp;
 
-    tmp = std::getenv("VTE_VERSION");
+    tmp = std::getenv(u8"VTE_VERSION");
     if (tmp) vte_version = tmp;
 
-    bool xterm_like = detail::contains(name, "xterm");
+    bool xterm_like = detail::contains(name, u8"xterm");
 
     bool has_truecolor =
         !vte_version.empty()
             ? (vte_version[0] > '3' || (vte_version[0] == '3' && vte_version[1] >= '6')) // VTE >= 0.36 supports true color
-            : detail::contains(colorterm, "truecolor") ||
-              detail::contains(name, "cygwin") ||
-              detail::contains(colorterm, "cygwin") ||
-              detail::contains(name, "konsole") ||
-              detail::contains(colorterm, "konsole");
+            : detail::contains(colorterm, u8"truecolor") ||
+              detail::contains(name, u8"cygwin") ||
+              detail::contains(colorterm, u8"cygwin") ||
+              detail::contains(name, u8"konsole") ||
+              detail::contains(colorterm, u8"konsole");
 
     bool has_256color = has_truecolor ||
-                        detail::contains(name, "256") ||
+                        detail::contains(name, u8"256") ||
                         !colorterm.empty();
 
     bool has_ansi = has_256color ||
                     xterm_like ||
-                    detail::contains(name, "screen") ||
-                    detail::contains(name, "vt100") ||
-                    detail::contains(name, "color") ||
-                    detail::contains(name, "ansi") ||
-                    detail::contains(name, "cygwin") ||
-                    detail::contains(name, "linux");
+                    detail::contains(name, u8"screen") ||
+                    detail::contains(name, u8"vt100") ||
+                    detail::contains(name, u8"color") ||
+                    detail::contains(name, u8"ansi") ||
+                    detail::contains(name, u8"cygwin") ||
+                    detail::contains(name, u8"linux");
 
     if (mode == TerminalMode::None)
         mode = has_truecolor ? TerminalMode::Iso24bit
@@ -595,26 +595,26 @@ TerminalInfo& TerminalInfo::detect() {
                                                        : TerminalMode::None;
 
     if (xterm_like && foreground_color == Color(0.9f, 0.9f, 0.9f, 1)) {
-        auto response = query("\x1b]10;?\x1b\\", "\a\\");
+        auto response = query(u8"\x1b]10;?\x1b\\", u8"\a\\");
         if (!response.empty()) {
-            auto pos = response.find("rgb:");
+            auto pos = response.find(u8"rgb:");
             if (pos != std::string::npos) {
                 pos += 4;
                 Color32 c = { 255, 255, 255, 255 };
-                if (sscanf(response.c_str() + pos, "%2hhx%*2x/%2hhx%*2x/%2hhx%*2x", &c.r, &c.g, &c.b) == 3)
+                if (sscanf(response.c_str() + pos, u8"%2hhx%*2x/%2hhx%*2x/%2hhx%*2x", &c.r, &c.g, &c.b) == 3)
                     foreground_color = c;
             }
         }
     }
 
     if (xterm_like && background_color == Color(0, 0, 0, 1)) {
-        auto response = query("\x1b]11;?\x1b\\", "\a\\");
+        auto response = query(u8"\x1b]11;?\x1b\\", u8"\a\\");
         if (!response.empty()) {
-            auto pos = response.find("rgb:");
+            auto pos = response.find(u8"rgb:");
             if (pos != std::string::npos) {
                 pos += 4;
                 Color32 c = { 0, 0, 0, 255 };
-                if (sscanf(response.c_str() + pos, "%2hhx%*2x/%2hhx%*2x/%2hhx%*2x", &c.r, &c.g, &c.b) == 3)
+                if (sscanf(response.c_str() + pos, u8"%2hhx%*2x/%2hhx%*2x/%2hhx%*2x", &c.r, &c.g, &c.b) == 3)
                     background_color = c;
             }
         }
