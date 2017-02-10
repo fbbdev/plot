@@ -30,17 +30,17 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 
 set(HEADER_FILES
-    braille.hpp
-    color.hpp
-    colors.hpp
-    layout.hpp
-    plot.hpp
-    point.hpp
-    real_canvas.hpp
-    rect.hpp
-    string_view.hpp
-    terminal.hpp
-    utils.hpp)
+    include/braille.hpp
+    include/color.hpp
+    include/colors.hpp
+    include/layout.hpp
+    include/plot.hpp
+    include/point.hpp
+    include/real_canvas.hpp
+    include/rect.hpp
+    include/string_view.hpp
+    include/terminal.hpp
+    include/utils.hpp)
 
 string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "${HEADER_FILES}")
 
@@ -54,7 +54,7 @@ if(BUILD_SINGLE_HEADER)
 
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
-        COMMAND "${PYTHON_EXECUTABLE}" "pack.py" "plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
+        COMMAND "${PYTHON_EXECUTABLE}" "pack.py" "${CMAKE_CURRENT_SOURCE_DIR}/include/plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${HEADER_FILES}
         COMMENT "Packing header files")
@@ -63,6 +63,6 @@ if(BUILD_SINGLE_HEADER)
         single-header ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp")
 endif()
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 add_subdirectory(examples)

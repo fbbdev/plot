@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include "../terminal.hpp"
+#include "terminal.hpp"
 
 #include <iostream>
 

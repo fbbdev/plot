@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include "../plot.hpp"
+#include "plot.hpp"
 
 #include <cmath>
 #include <iostream>
