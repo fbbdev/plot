@@ -54,7 +54,7 @@ if(BUILD_SINGLE_HEADER)
 
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
-        COMMAND "${PYTHON_EXECUTABLE}" "pack.py" "${CMAKE_CURRENT_SOURCE_DIR}/include/plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
+        COMMAND "${PYTHON_EXECUTABLE}" "scripts/pack.py" "${CMAKE_CURRENT_SOURCE_DIR}/include/plot.hpp" > "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         DEPENDS ${HEADER_FILES}
         COMMENT "Packing header files")
