@@ -40,6 +40,9 @@ set(HEADER_FILES
     include/rect.hpp
     include/string_view.hpp
     include/terminal.hpp
+    include/unicode_data.hpp
+    include/unicode_structs.hpp
+    include/unicode.hpp
     include/utils.hpp)
 
 string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "${HEADER_FILES}")

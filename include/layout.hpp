@@ -27,6 +27,7 @@
 #include "point.hpp"
 #include "string_view.hpp"
 #include "terminal.hpp"
+#include "unicode.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -491,11 +492,22 @@ namespace detail
         frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
                    block_iterator line, block_iterator end)
             : frame_(frame), overflow_(overflow), line_(std::move(line)), end_(std::move(end))
+        {
+            auto max_width = detail::block_traits<Block>::size(frame->block_).x;
+            std::tie(label_, label_width_) = utf8_clamp(frame->label_, max_width);
+        }
+
+        frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
+                   string_view label, std::size_t label_width,
+                   block_iterator line, block_iterator end)
+            : frame_(frame), overflow_(overflow),
+              label_(label), label_width_(label_width),
+              line_(std::move(line)), end_(std::move(end))
             {}
 
         frame_line next() const {
-            return (overflow_ || line_ == end_) ? frame_line(frame_, overflow_ + 1, line_, end_)
-                                                : frame_line(frame_, overflow_, std::next(line_), end_);
+            return (overflow_ || line_ == end_) ? frame_line(frame_, overflow_ + 1, label_, label_width_, line_, end_)
+                                                : frame_line(frame_, overflow_, label_, label_width_, std::next(line_), end_);
         }
 
         bool equal(frame_line const& other) const {
@@ -504,6 +516,8 @@ namespace detail
 
         Frame<Block> const* frame_ = nullptr;
         std::ptrdiff_t overflow_ = 0;
+        string_view label_{};
+        std::size_t label_width_ = 0;
         block_iterator line_{}, end_{};
 
     public:
@@ -567,6 +581,8 @@ public:
     }
 
 private:
+    template<typename>
+    friend class detail::frame_line;
     friend std::ostream& detail::operator<< <Block>(std::ostream&, value_type const&);
 
     string_view label_;
@@ -589,7 +605,7 @@ namespace detail
     template<typename Block>
     std::ostream& operator<<(std::ostream& stream, frame_line<Block> const& line) {
         auto size = detail::block_traits<Block>::size(line.frame_->block_);
-        auto label_margin = std::size_t(size.x) - utils::min(std::size_t(size.x), line.frame_->label_.size());
+        auto label_margin = std::size_t(size.x) - line.label_width_;
         auto const border = line.frame_->border_;
 
         if (line.overflow_ < 0) {
@@ -603,7 +619,7 @@ namespace detail
             for (; before_label > 0; --before_label)
                 stream << border.top;
 
-            stream << line.frame_->label_.substr(0, size.x);
+            stream << line.label_;
 
             for (; after_label > 0; --after_label)
                 stream << border.top;
