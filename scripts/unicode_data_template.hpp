@@ -51,21 +51,21 @@ namespace plot
 
 namespace detail
 {{
-    // Template variables should be linked only once though appearing
-    // in multiple translation units
-    template<typename T = unicode_interval_tree_t>
-    const T unicode_zero_width{{}};
+    // Template variables struct members should be linked only once
+    // though appearing in multiple translation units
+    template<typename = void>
+    struct unicode_tables {{
+        static const unicode_interval_tree_t zero_width[];
+        static const unicode_interval_tree_t double_width[];
+    }};
 
-    template<>
-    const unicode_interval_tree_t unicode_zero_width<unicode_interval_tree_t>[] = {{
+    template<typename T>
+    const unicode_interval_tree_t unicode_tables<T>::zero_width[] = {{
 {zero_width}
     }};
 
-    template<typename T = unicode_interval_tree_t>
-    const T unicode_double_width{{}};
-
-    template<>
-    const unicode_interval_tree_t unicode_double_width<unicode_interval_tree_t>[] = {{
+    template<typename T>
+    const unicode_interval_tree_t unicode_tables<T>::double_width[] = {{
 {double_width}
     }};
 }} /* namespace detail */

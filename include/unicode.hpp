@@ -44,10 +44,10 @@ namespace detail
     //
     // For all other code points, return 1.
     inline std::size_t wcwidth(char32_t cp) {
-        if (unicode_cp_in_tree(cp, unicode_zero_width<>))
+        if (unicode_cp_in_tree(cp, unicode_tables<>::zero_width))
             return 0;
 
-        if (unicode_cp_in_tree(cp, unicode_double_width<>))
+        if (unicode_cp_in_tree(cp, unicode_tables<>::double_width))
             return 2;
 
         return 1;

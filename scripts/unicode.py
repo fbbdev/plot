@@ -281,7 +281,7 @@ if __name__ == '__main__':
           .format(len(zero_width), minmax), file=sys.stderr)
 
     print("Generating C code for zero-width search tree", file=sys.stderr)
-    zero_width = render_tree(zero_width, 'unicode_zero_width<>', 8)
+    zero_width = render_tree(zero_width, 'unicode_tables<T>::zero_width', 8)
 
     print("Fetching {}".format(UCD_EA_WIDTH), file=sys.stderr)
     local_filename, _ = urllib.request.urlretrieve(UCD_BASE + UCD_EA_WIDTH)
@@ -319,7 +319,7 @@ if __name__ == '__main__':
           .format(len(double_width), minmax), file=sys.stderr)
 
     print("Generating C code for double-width search tree", file=sys.stderr)
-    double_width = render_tree(double_width, 'unicode_double_width<>', 8)
+    double_width = render_tree(double_width, 'unicode_tables<T>::double_width', 8)
 
     print("Rendering header", file=sys.stderr)
     with open('unicode_data_template.hpp') as template:
