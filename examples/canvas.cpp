@@ -1,7 +1,7 @@
 /**
  * The MIT License
  *
- * Copyright (c) 2016 Fabio Massaioli
+ * Copyright (c) 2017 Fabio Massaioli
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,15 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 using namespace plot;
 
 // Create a function returning the vertical start and end of the stroke
 // at horizontal coordinate x. Pixels will be painted on vertical range [base,end)
-std::pair<Coord,Coord> sinStrokeFunction(const Coord x) {
+std::pair<Coord,Coord> sinStrokeFunction(Coord x) {
     // To understand the apparently random numbers below (58, 10, 12 and 11),
-    // see rows 107, 108
+    // see line 115
     Coord base = 58 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f)));
     Coord end  = 58 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
     // When drawing a horizontal segment, base equals end and
@@ -59,8 +60,8 @@ int main() {
     // location 11,11 to 40,40
     constexpr Point upperLeft(11, 11);
     constexpr Point lowerRight(40, 40);
-    constexpr Rect filledRectangleSize(upperLeft, lowerRight);
-    canvas.rect(palette::firebrick, palette::blueviolet, filledRectangleSize);
+    constexpr Rect filledRectangle(upperLeft, lowerRight);
+    canvas.rect(palette::firebrick, palette::blueviolet, filledRectangle);
 
     // Draw lines in 'limegreen' overlayed onto the canvas
     // note that each method returns a reference to the object so
@@ -89,28 +90,35 @@ int main() {
     // Draw an elipse with green outline, filled with yellow centered at {60,26} with  semi-axes of {10,12}
     canvas.ellipse(palette::green, palette::yellow, { 60, 26 }, { 10, 12 });
 
-    // Stroke a custom shaped line in 'royalblue' color
     // Bounding box for where the stroke functions are rendered.
     constexpr Coord xStart = 12;
     constexpr Coord xStop  = 71;
     constexpr Coord yStart = 46;
     constexpr Coord yStop  = 71;
-    constexpr Rect functionRectArea({ xStart, yStart }, { xStop, yStop });
-    canvas.rect(palette::lightcyan, functionRectArea);
+    constexpr Rect strokeArea({ xStart, yStart }, { xStop, yStop });
+    canvas.rect(palette::lightcyan, strokeArea);
 
     canvas.push();
+
+    // Stroke a custom shaped line in 'royalblue' color
+    //
     // The function 'sinStrokeFunction' will be evaluated at each value in [xStart, xStop]
     // and stroke in the color of 'royalblue' will be rendered for those coordinates.
     // Output will be clipped to range [yStart, yStop].
-    canvas.stroke(palette::royalblue, functionRectArea , sinStrokeFunction);
-    // Draw a double width stroke using a lambda function for cos
-    canvas.stroke(palette::salmon, functionRectArea, [](Coord x) {
-        constexpr Coord amplitude = 10;
-        Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
-              end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
-        // Always add one pixel to the stroke to make it 2 px tall
-        end += (end > base) ? 1 : ((end < base) ? -1 : /* end == base */ 2);
-        return std::make_pair(base, end);
+    canvas.stroke(palette::royalblue, strokeArea, sinStrokeFunction);
+
+    constexpr float amplitude = 10;
+    constexpr Coord vCenter = (yStop + yStart) / 2;
+
+    // Fill cosine area using a custom lambda function returning true for
+    // points inside the colored area.
+    canvas.fill(palette::salmon, strokeArea, [](Point p) {
+        Coord value = vCenter - std::lround(amplitude*std::cos(2*3.141592f*((p.x - xStart)/30.0f)));
+
+        if (value < vCenter)
+            return p.y <= vCenter && p.y >= value;
+        else
+            return p.y >= vCenter && p.y <= value;
      }, TerminalOp::ClipSrc);
      canvas.pop(TerminalOp::Over);
 
@@ -119,6 +127,24 @@ int main() {
     canvas.dot(palette::purple, { 0, canvas.size().y - 1 });
     canvas.dot(palette::gold,   { canvas.size().x - 1, 0 });
     canvas.dot(palette::indigo, canvas.size() - Point(1, 1));
+
+    // Draw a chain of lines from a sequence of points (initializer list)
+    canvas.path(palette::deepskyblue, {
+        { 98, 30 },
+        { 80, 12 },
+        { 100, 15 },
+        { 82, 25 }
+    });
+
+    std::vector<Point> points{
+        { 98, 50 },
+        { 80, 68 },
+        { 100, 65 },
+        { 82, 55 }
+    };
+
+    // Draw a chain of lines from a sequence of points (iterators)
+    canvas.path(palette::mediumseagreen, points.begin(), points.end());
 
     // Write the canvas to stdout
     std::cout << canvas << std::endl;
