@@ -29,16 +29,22 @@
 
 using namespace plot;
 
-// Create a function for returning the start and end stroke across a cell
-// the Coord x is the current x location within the canvas.
+// Create a function returning the vertical start and end of the stroke
+// at horizontal coordinate x. Pixels will be painted on vertical range [base,end)
 std::pair<Coord,Coord> sinStrokeFunction(const Coord x) {
+    // To understand the apparently random numbers below (58, 10, 12 and 11),
+    // see rows 107, 108
     Coord base = 58 - std::lround(10*std::sin(2*3.141592f*((x - 12)/30.0f)));
     Coord end  = 58 - std::lround(10*std::sin(2*3.141592f*((x - 11)/30.0f)));
-    return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+    // When drawing a horizontal segment, base equals end and
+    // stroke would have 0 width: so we make it 1px wide
+    return std::make_pair(base, (base != end) ? end : base + 1);
 }
 
 int main() {
     // Each Braille Canvas is made up of cells that are 2x4 points
+    // Points are switched on and off individually, but color is stored
+    // per cell.
     constexpr Coord canvasCellCols = 70;
     constexpr Coord canvasCellRows = 20;
     constexpr Size canvasCellSize(canvasCellCols, canvasCellRows);
@@ -49,30 +55,41 @@ int main() {
     // relative to the 140x80 points with the origin (i.e. Point{0,0}) in the upper
     // left hand corner.
 
-    // First draw a rectangle with a 'firebrick' outline and 'blueviolet; filling from point
+    // First draw a rectangle with a 'firebrick' outline and 'blueviolet' filling from point
     // location 11,11 to 40,40
     constexpr Point upperLeft(11, 11);
     constexpr Point lowerRight(40, 40);
-    constexpr Rect FilledRectangleSize(upperLeft, lowerRight);
-    canvas.rect(palette::firebrick, palette::blueviolet, FilledRectangleSize);
+    constexpr Rect filledRectangleSize(upperLeft, lowerRight);
+    canvas.rect(palette::firebrick, palette::blueviolet, filledRectangleSize);
 
-    // next push lines in 'limegreen' overlayed onto the canvas
+    // Draw lines in 'limegreen' overlayed onto the canvas
     // note that each method returns a reference to the object so
     // that commands can be easily chained together.
-    canvas.push()
-              .line(palette::limegreen, { 12, 17 }, { 17, 39 })
-              .line(palette::limegreen, { 17, 39 }, { 39, 34 })
-              .line(palette::limegreen, { 39, 34 }, { 34, 12 })
-              .line(palette::limegreen, { 34, 12 }, { 12, 17 })
-          .pop(TerminalOp::ClipDst);
 
-    // Plot an ellipse in a bounding box from {0,0} to {30,30} offset by {45,11}
+    // Push the current image to a stack and create a new clean image
+    canvas.push()
+          .line(palette::limegreen, { 12, 17 }, { 17, 39 })
+          .line(palette::limegreen, { 17, 39 }, { 39, 34 })
+          .line(palette::limegreen, { 39, 34 }, { 34, 12 })
+          .line(palette::limegreen, { 34, 12 }, { 12, 17 });
+
+    // Pop the previous image from the stack and composite the current
+    // one onto it
+    //
+    // Most drawing commands can take an optional compositing operation
+    // as their last argument. Three operations are available:
+    //   - TerminalOp::Over = Paint source over destination, mix cell colors
+    //   - TerminalOp::ClipDst = Erase destination cell where source is not empty
+    //   - TerminalOp::ClipSrc = Ignore source cell where destination is not empty
+    canvas.pop(TerminalOp::ClipDst);
+
+    // Draw an ellipse in a bounding box from {0,0} to {30,30} offset by {45,11}
     constexpr Rect greyEllipseBoundingBox = Rect({ 30, 30 }) + Point(45, 11);
     canvas.ellipse(palette::slategrey, greyEllipseBoundingBox);
-    // Plot an elipse with green outline, filled with yellow centered at {60,26} with  semi-axes of {10,12}
+    // Draw an elipse with green outline, filled with yellow centered at {60,26} with  semi-axes of {10,12}
     canvas.ellipse(palette::green, palette::yellow, { 60, 26 }, { 10, 12 });
 
-    // Plot a function in 'mediumblue' color
+    // Stroke a custom shaped line in 'royalblue' color
     // Bounding box for where the stroke functions are rendered.
     constexpr Coord xStart = 12;
     constexpr Coord xStop  = 71;
@@ -84,14 +101,16 @@ int main() {
     canvas.push();
     // The function 'sinStrokeFunction' will be evaluated at each value in [xStart, xStop]
     // and stroke in the color of 'royalblue' will be rendered for those coordinates.
-    // Strokes will be clipped to range [yStart, yStop].
+    // Output will be clipped to range [yStart, yStop].
     canvas.stroke(palette::royalblue, functionRectArea , sinStrokeFunction);
-    // Plot using a lambda function for cos
+    // Draw a double width stroke using a lambda function for cos
     canvas.stroke(palette::salmon, functionRectArea, [](Coord x) {
-         constexpr Coord amplitude = 10;
-         Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
-               end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
-         return (base != end) ? std::make_pair(base, end) : std::make_pair(base, base+1);
+        constexpr Coord amplitude = 10;
+        Coord base = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart)/30.0f))),
+              end  = (yStop+yStart)/2 - std::lround(amplitude*std::cos(2*3.141592f*((x - xStart-1)/30.0f)));
+        // Always add one pixel to the stroke to make it 2 px tall
+        end += (end > base) ? 1 : ((end < base) ? -1 : /* end == base */ 2);
+        return std::make_pair(base, end);
      }, TerminalOp::ClipSrc);
      canvas.pop(TerminalOp::Over);
 
@@ -101,6 +120,7 @@ int main() {
     canvas.dot(palette::gold,   { canvas.size().x - 1, 0 });
     canvas.dot(palette::indigo, canvas.size() - Point(1, 1));
 
+    // Write the canvas to stdout
     std::cout << canvas << std::endl;
 
     return 0;

@@ -58,9 +58,9 @@ enum class TerminalMode
 
 enum class TerminalOp
 {
-    Over,       // Paint source over destination, mix character colors
-    ClipDst,    // Erase destination where source is not empty
-    ClipSrc     // Ignore source where destination is not empty
+    Over,       // Paint source over destination, mix cell colors
+    ClipDst,    // Erase destination cell where source is not empty
+    ClipSrc     // Ignore source cell where destination is not empty
 };
 
 
