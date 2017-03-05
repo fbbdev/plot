@@ -376,7 +376,7 @@ public:
         {}
 
     Size size() const {
-        return { static_cast<Coord>(width_ ? width_ : utf8_string_width(text_)), 1 };
+        return { Coord(width_ ? width_ : utf8_string_width(text_)), 1 };
     }
 
     const_iterator begin() const {
@@ -448,6 +448,187 @@ inline Label label(string_view text, std::size_t width = 0, string_view fill = "
 
 inline Label label(string_view text, Align align, std::size_t width = 0, string_view fill = " ") {
     return Label(text, align, width, fill);
+}
+
+
+template<typename Block>
+class Alignment;
+
+namespace detail
+{
+    template<typename Block>
+    class alignment_line;
+
+    template<typename Block>
+    std::ostream& operator<<(std::ostream&, alignment_line<Block> const&);
+
+    template<typename Block>
+    class alignment_line {
+        using block_iterator = typename detail::block_traits<Block>::iterator;
+
+        friend class detail::block_iterator<Alignment<Block>, alignment_line>;
+        friend class Alignment<Block>;
+
+        friend std::ostream& operator<< <Block>(std::ostream&, alignment_line const&);
+
+        alignment_line(Alignment<Block> const* alignment,
+                       std::size_t left_margin, std::size_t right_margin,
+                       std::ptrdiff_t overflow, block_iterator line, block_iterator end)
+           : alignment_(alignment), left_margin_(left_margin), right_margin_(right_margin),
+             overflow_(overflow), line_(std::move(line)), end_(std::move(end))
+           {}
+
+        alignment_line next() const {
+            return (overflow_ || line_ == end_) ? alignment_line(alignment_, left_margin_, right_margin_, overflow_ + 1, line_, end_)
+                                                : alignment_line(alignment_, left_margin_, right_margin_, overflow_, std::next(line_), end_);
+        }
+
+        bool equal(alignment_line const& other) const {
+            return line_ == other.line_ && overflow_ == other.overflow_;
+        }
+
+        Alignment<Block> const* alignment_ = nullptr;
+        std::size_t left_margin_ = 0, right_margin_ = 0;
+        std::ptrdiff_t overflow_ = 0;
+        block_iterator line_{}, end_{};
+
+    public:
+        alignment_line() = default;
+    };
+
+    template<typename Block>
+    inline std::ostream& operator<<(std::ostream& stream, alignment_line<Block> const& line) {
+        auto fill = stream.fill();
+        stream << std::setfill(' ');
+        if (!line.overflow_ && line.line_ != line.end_) {
+            stream << std::setw(line.left_margin_)
+                   << u8""
+                   << *line.line_
+                   << std::setw(line.right_margin_)
+                   << u8"";
+        } else {
+            stream << std::setw(line.alignment_->size().x)
+                   << u8"";
+        }
+
+        return stream << std::setfill(fill);
+    }
+} /* namespace detail */
+
+template<typename Block>
+class Alignment {
+public:
+    using value_type = detail::alignment_line<Block>;
+    using reference = value_type const&;
+    using const_reference = value_type const&;
+    using const_iterator = detail::block_iterator<Alignment<Block>, value_type>;
+    using iterator = const_iterator;
+    using difference_type = typename const_iterator::difference_type;
+    using size_type = Size;
+
+    explicit Alignment(Block block)
+        : block_(std::move(block))
+        {}
+
+    explicit Alignment(Size sz, Block block)
+        : size_(sz), block_(std::move(block))
+        {}
+
+    explicit Alignment(Align halign, Size sz, Block block)
+        : halign_(halign), size_(sz), block_(std::move(block))
+        {}
+
+    explicit Alignment(VAlign valign, Size sz, Block block)
+        : valign_(valign), size_(sz), block_(std::move(block))
+        {}
+
+    explicit Alignment(Align halign, VAlign valign, Size sz, Block block)
+        : halign_(halign), valign_(valign), size_(sz), block_(std::move(block))
+        {}
+
+    Size size() const {
+        auto block_sz = detail::block_traits<Block>::size(block_);
+        return { utils::max(block_sz.x, size_.x), utils::max(block_sz.y, size_.y) };
+    }
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const {
+        auto sz = size();
+        auto block_sz = detail::block_traits<Block>::size(block_);
+
+        auto hmargin = sz.x - block_sz.x,
+             vmargin = sz.y - block_sz.y;
+        auto top = (valign_ == VAlign::Middle) ? vmargin / 2
+                                               : (valign_ == VAlign::Bottom) ? vmargin : 0;
+        auto left = (halign_ == Align::Center) ? hmargin / 2
+                                              : (halign_ == Align::Right) ? hmargin : 0;
+
+        return { { this, std::size_t(left), std::size_t(hmargin - left), -std::ptrdiff_t(top),
+                   detail::block_traits<Block>::begin(block_), detail::block_traits<Block>::end(block_) } };
+    }
+
+    const_iterator cend() const {
+        auto sz = size();
+        auto block_sz = detail::block_traits<Block>::size(block_);
+
+        auto hmargin = sz.x - block_sz.x,
+             vmargin = sz.y - block_sz.y;
+        auto top = (valign_ == VAlign::Middle) ? vmargin / 2
+                                               : (valign_ == VAlign::Bottom) ? vmargin : 0;
+        auto left = (halign_ == Align::Center) ? hmargin / 2
+                                              : (halign_ == Align::Right) ? hmargin : 0;
+
+        return { { this, std::size_t(left), std::size_t(hmargin - left), std::ptrdiff_t(vmargin - top),
+                   detail::block_traits<Block>::end(block_), detail::block_traits<Block>::end(block_) } };
+    }
+
+private:
+    friend std::ostream& detail::operator<< <Block>(std::ostream&, value_type const&);
+
+    Align halign_ = Align::Center;
+    VAlign valign_ = VAlign::Middle;
+    Size size_ = { 0, 0 };
+    Block block_;
+};
+
+template<typename Block>
+inline std::ostream& operator<<(std::ostream& stream, Alignment<Block> const& alignment) {
+    for (auto const& line: alignment)
+        stream << line << '\n';
+
+    return stream;
+}
+
+template<typename Block>
+inline Alignment<std::decay_t<Block>> alignment(Block&& block) {
+    return Alignment<std::decay_t<Block>>(std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Alignment<std::decay_t<Block>> alignment(Size sz, Block&& block) {
+    return Alignment<std::decay_t<Block>>(sz, std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Alignment<std::decay_t<Block>> alignment(Align halign, Size sz, Block&& block) {
+    return Alignment<std::decay_t<Block>>(halign, sz, std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Alignment<std::decay_t<Block>> alignment(VAlign valign, Size sz, Block&& block) {
+    return Alignment<std::decay_t<Block>>(valign, sz, std::forward<Block>(block));
+}
+
+template<typename Block>
+inline Alignment<std::decay_t<Block>> alignment(Align halign, VAlign valign, Size sz, Block&& block) {
+    return Alignment<std::decay_t<Block>>(halign, valign, sz, std::forward<Block>(block));
 }
 
 

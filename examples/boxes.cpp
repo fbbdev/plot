@@ -55,12 +55,14 @@ int main() {
 
     // Build block layout
     auto layout =
-        margin(
-            hbox(
-                vbox(
-                    frame(u8"cos(t), sin(t)", Align::Center, &waves),
-                    frame(u8"cos(t)·sin(t), sin²(t)", Align::Center, &mul_waves)),
-                frame(u8"P(cos(t)·sin(t), sin²(t))", Align::Center, &circle)));
+        alignment(
+            { term.size().x, 0 },
+            margin(
+                hbox(
+                    vbox(
+                        frame(u8"cos(t), sin(t)", Align::Center, &waves),
+                        frame(u8"cos(t)·sin(t), sin²(t)", Align::Center, &mul_waves)),
+                    frame(u8"P(cos(t)·sin(t), sin²(t))", Align::Center, &circle))));
 
     auto bounds = waves.bounds();
     auto size = waves.size();
