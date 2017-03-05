@@ -323,6 +323,134 @@ struct Border {
 };
 
 
+class Label;
+
+namespace detail
+{
+    class label_line;
+
+    std::ostream& operator<<(std::ostream&, label_line const&);
+
+    class label_line {
+        friend class detail::block_iterator<Label, label_line>;
+        friend class plot::Label;
+
+        friend std::ostream& operator<<(std::ostream&, label_line const&);
+
+        label_line(Label const* label, std::ptrdiff_t overflow)
+            : label_(label), overflow_(overflow)
+            {}
+
+        label_line next() const {
+            return label_line(label_, overflow_ + 1);
+        }
+
+        bool equal(label_line const& other) const {
+            return overflow_ == other.overflow_;
+        }
+
+        Label const* label_ = nullptr;
+        std::ptrdiff_t overflow_ = 0;
+
+    public:
+        label_line() = default;
+    };
+} /* namespace detail */
+
+class Label {
+public:
+    using value_type = detail::label_line;
+    using reference = value_type const&;
+    using const_reference = value_type const&;
+    using const_iterator = detail::block_iterator<Label, value_type>;
+    using iterator = const_iterator;
+    using difference_type = typename const_iterator::difference_type;
+    using size_type = Size;
+
+    explicit Label(string_view text, std::size_t width = 0, string_view fill = " ")
+        : text_(text), width_(width), fill_(fill)
+        {}
+
+    explicit Label(string_view text, Align align, std::size_t width = 0, string_view fill = " ")
+        : text_(text), align_(align), width_(width), fill_(fill)
+        {}
+
+    Size size() const {
+        return { static_cast<Coord>(width_ ? width_ : utf8_string_width(text_)), 1 };
+    }
+
+    const_iterator begin() const {
+        return cbegin();
+    }
+
+    const_iterator end() const {
+        return cend();
+    }
+
+    const_iterator cbegin() const {
+        return { { this, 0 } };
+    }
+
+    const_iterator cend() const {
+        return { { this, 1 } };
+    }
+
+private:
+    friend std::ostream& detail::operator<<(std::ostream&, value_type const&);
+
+    string_view text_;
+    Align align_ = Align::Left;
+    std::size_t width_ = 0;
+    string_view fill_ = " ";
+};
+
+inline std::ostream& operator<<(std::ostream& stream, Label const& label) {
+    auto line = *label.cbegin();
+    stream << line << '\n';
+
+    return stream;
+}
+
+namespace detail
+{
+    inline std::ostream& operator<<(std::ostream& stream, label_line const& line) {
+        auto const text = line.label_->text_;
+        auto const twidth = utf8_string_width(text);
+        auto const width = line.label_->width_;
+
+        if (!width || twidth == width)
+            return stream << text;
+
+        if (twidth > width)
+            return stream << utf8_clamp(text, width).first;
+
+        std::size_t padding = width - twidth;
+        std::size_t padding_left =
+            (line.label_->align_ == Align::Center) ? padding / 2 :
+                (line.label_->align_ == Align::Right) ? padding : 0;
+        std::size_t padding_right = padding - padding_left;
+
+        while (padding_left--)
+            stream << line.label_->fill_;
+
+        stream << text;
+
+        while (padding_right--)
+            stream << line.label_->fill_;
+
+        return stream;
+    }
+} /* namespace detail */
+
+inline Label label(string_view text, std::size_t width = 0, string_view fill = " ") {
+    return Label(text, width, fill);
+}
+
+inline Label label(string_view text, Align align, std::size_t width = 0, string_view fill = " ") {
+    return Label(text, align, width, fill);
+}
+
+
 template<typename Block>
 class Margin;
 
@@ -492,22 +620,11 @@ namespace detail
         frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
                    block_iterator line, block_iterator end)
             : frame_(frame), overflow_(overflow), line_(std::move(line)), end_(std::move(end))
-        {
-            auto max_width = detail::block_traits<Block>::size(frame->block_).x;
-            std::tie(label_, label_width_) = utf8_clamp(frame->label_, max_width);
-        }
-
-        frame_line(Frame<Block> const* frame, std::ptrdiff_t overflow,
-                   string_view label, std::size_t label_width,
-                   block_iterator line, block_iterator end)
-            : frame_(frame), overflow_(overflow),
-              label_(label), label_width_(label_width),
-              line_(std::move(line)), end_(std::move(end))
             {}
 
         frame_line next() const {
-            return (overflow_ || line_ == end_) ? frame_line(frame_, overflow_ + 1, label_, label_width_, line_, end_)
-                                                : frame_line(frame_, overflow_, label_, label_width_, std::next(line_), end_);
+            return (overflow_ || line_ == end_) ? frame_line(frame_, overflow_ + 1, line_, end_)
+                                                : frame_line(frame_, overflow_, std::next(line_), end_);
         }
 
         bool equal(frame_line const& other) const {
@@ -516,8 +633,6 @@ namespace detail
 
         Frame<Block> const* frame_ = nullptr;
         std::ptrdiff_t overflow_ = 0;
-        string_view label_{};
-        std::size_t label_width_ = 0;
         block_iterator line_{}, end_{};
 
     public:
@@ -605,28 +720,14 @@ namespace detail
     template<typename Block>
     std::ostream& operator<<(std::ostream& stream, frame_line<Block> const& line) {
         auto size = detail::block_traits<Block>::size(line.frame_->block_);
-        auto label_margin = std::size_t(size.x) - line.label_width_;
         auto const border = line.frame_->border_;
 
         if (line.overflow_ < 0) {
-            std::size_t before_label =
-                (line.frame_->align_ == Align::Center) ? label_margin / 2
-                                                       : (line.frame_->align_ == Align::Right) ? label_margin : 0;
-            std::size_t after_label = label_margin - before_label;
+            auto lbl = label(line.frame_->label_, line.frame_->align_, size.x, border.top);
+            auto lbl_line = *lbl.cbegin();
 
-            stream << line.frame_->term_.reset() << border.top_left;
-
-            for (; before_label > 0; --before_label)
-                stream << border.top;
-
-            stream << line.label_;
-
-            for (; after_label > 0; --after_label)
-                stream << border.top;
-
-            stream << border.top_right;
-
-            return stream;
+            return stream << line.frame_->term_.reset()
+                          << border.top_left << lbl_line << border.top_right;
         } else if (line.line_ == line.end_) {
             stream << line.frame_->term_.reset() << border.bottom_left;
 
