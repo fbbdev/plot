@@ -2,6 +2,7 @@
 
 from collections import deque
 import sys
+import random
 import urllib.request
 
 
@@ -102,10 +103,18 @@ def build_tree(intervals, start=0, end=None, base=0):
         intv = intervals[middle]
         center = intv.center
     else:
-        left_half = (start, middle)
-        right_half = (middle, end)
-        intv = None
-        center = (intervals[middle - 1].end + intervals[middle].start) // 2
+        lr = random.choice((True, False))
+
+        if lr:
+            left_half = (start, middle - 1)
+            right_half = (middle, end)
+            intv = intervals[middle - 1]
+        else:
+            left_half = (start, middle)
+            right_half = (middle + 1, end)
+            intv = intervals[middle]
+
+        center = intv.center
 
     left_subtree_base = base + 1
     left_subtree = build_tree(
@@ -244,6 +253,8 @@ DOUBLE_WIDTH_CODE_POINTS = {'F', 'W'}
 
 
 if __name__ == '__main__':
+    random.seed("cafnwab4gjc0runfyansmfn890mcta48wra4wcaw4yo98ujaucpaècaàp4c")
+
     zero_width = [Interval(UC_START, UC_END)]
     double_width = [Interval(UC_START, UC_END)]
 
