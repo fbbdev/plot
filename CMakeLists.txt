@@ -29,31 +29,32 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(HEADER_FILES
-    include/braille.hpp
-    include/color.hpp
-    include/colors.hpp
-    include/layout.hpp
-    include/plot.hpp
-    include/point.hpp
-    include/real_canvas.hpp
-    include/rect.hpp
-    include/string_view.hpp
-    include/terminal.hpp
-    include/unicode_data.hpp
-    include/unicode_structs.hpp
-    include/unicode.hpp
-    include/utils.hpp)
-
-string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "${HEADER_FILES}")
-
 add_library(plot INTERFACE)
-target_sources(plot INTERFACE ${HEADER_FILES})
+target_include_directories(plot INTERFACE include)
 
 option(BUILD_SINGLE_HEADER "Pack all headers into a single header library" OFF)
+option(BUILD_EXAMPLES "Build plot examples" ON)
 
 if(BUILD_SINGLE_HEADER)
     find_package(PythonInterp 3 REQUIRED)
+
+    set(HEADER_FILES
+        include/braille.hpp
+        include/color.hpp
+        include/colors.hpp
+        include/layout.hpp
+        include/plot.hpp
+        include/point.hpp
+        include/real_canvas.hpp
+        include/rect.hpp
+        include/string_view.hpp
+        include/terminal.hpp
+        include/unicode_data.hpp
+        include/unicode_structs.hpp
+        include/unicode.hpp
+        include/utils.hpp)
+
+    string(REGEX REPLACE "([^;]+)" "${CMAKE_CURRENT_SOURCE_DIR}/\\1" HEADER_FILES "${HEADER_FILES}")
 
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp"
@@ -66,6 +67,7 @@ if(BUILD_SINGLE_HEADER)
         single-header ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp")
 endif()
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-add_subdirectory(examples)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
