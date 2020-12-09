@@ -33,6 +33,7 @@ add_library(plot INTERFACE)
 target_include_directories(plot INTERFACE include)
 
 option(BUILD_SINGLE_HEADER "Pack all headers into a single header library" OFF)
+option(BUILD_EXAMPLES "Build plot examples" ON)
 
 if(BUILD_SINGLE_HEADER)
     find_package(PythonInterp 3 REQUIRED)
@@ -66,4 +67,7 @@ if(BUILD_SINGLE_HEADER)
         single-header ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/plot.hpp")
 endif()
 
-add_subdirectory(examples)
+
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
