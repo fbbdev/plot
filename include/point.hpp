@@ -158,7 +158,11 @@ inline constexpr GenericPoint<T> operator/(T const& lhs, GenericPoint<T> const& 
     };
 }
 
+#ifdef __arm__
+using Coord = long int;
+#else
 using Coord = std::ptrdiff_t;
+#endif
 using Coordf = float;
 
 using Point = GenericPoint<Coord>;
